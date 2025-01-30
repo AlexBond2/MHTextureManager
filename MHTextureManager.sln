@@ -5,6 +5,8 @@ VisualStudioVersion = 17.9.34902.65
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MHTextureManager", "src\MHTextureManager.csproj", "{3B46920C-9994-44E2-8488-6E67790D5419}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DDSLib", "DDSLib\DDSLib.csproj", "{63287C47-8658-4401-9C51-D06C2A95AF99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -12,7 +14,13 @@ Global
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{3B46920C-9994-44E2-8488-6E67790D5419}.Debug|x64.ActiveCfg = Debug|x64
+		{3B46920C-9994-44E2-8488-6E67790D5419}.Debug|x64.Build.0 = Debug|x64
 		{3B46920C-9994-44E2-8488-6E67790D5419}.Release|x64.ActiveCfg = Release|x64
+		{3B46920C-9994-44E2-8488-6E67790D5419}.Release|x64.Build.0 = Release|x64
+		{63287C47-8658-4401-9C51-D06C2A95AF99}.Debug|x64.ActiveCfg = Debug|x64
+		{63287C47-8658-4401-9C51-D06C2A95AF99}.Debug|x64.Build.0 = Debug|x64
+		{63287C47-8658-4401-9C51-D06C2A95AF99}.Release|x64.ActiveCfg = Release|x64
+		{63287C47-8658-4401-9C51-D06C2A95AF99}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

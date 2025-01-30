@@ -32,6 +32,9 @@
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             openToolStripMenuItem = new ToolStripMenuItem();
+            textureToolStripMenuItem = new ToolStripMenuItem();
+            importDDSToolStripMenuItem = new ToolStripMenuItem();
+            exportDDSToolStripMenuItem = new ToolStripMenuItem();
             statusStrip1 = new StatusStrip();
             totalTexturesStatusLabel = new ToolStripStatusLabel();
             totalTexturesStatus = new ToolStripStatusLabel();
@@ -46,7 +49,8 @@
             label1 = new Label();
             filterBox = new TextBox();
             panel4 = new Panel();
-            pictureBox1 = new PictureBox();
+            texturePanel = new Panel();
+            textureView = new PictureBox();
             panel5 = new Panel();
             textureFileLabel = new Label();
             label5 = new Label();
@@ -67,14 +71,15 @@
             panel2.SuspendLayout();
             panel1.SuspendLayout();
             panel4.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            texturePanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)textureView).BeginInit();
             panel5.SuspendLayout();
             panel3.SuspendLayout();
             SuspendLayout();
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, textureToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(886, 24);
@@ -85,8 +90,8 @@
             // 
             fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            fileToolStripMenuItem.Size = new Size(37, 20);
-            fileToolStripMenuItem.Text = "File";
+            fileToolStripMenuItem.Size = new Size(65, 20);
+            fileToolStripMenuItem.Text = "Manifest";
             // 
             // openToolStripMenuItem
             // 
@@ -94,6 +99,26 @@
             openToolStripMenuItem.Size = new Size(161, 22);
             openToolStripMenuItem.Text = "Open Manifest...";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
+            // 
+            // textureToolStripMenuItem
+            // 
+            textureToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { importDDSToolStripMenuItem, exportDDSToolStripMenuItem });
+            textureToolStripMenuItem.Name = "textureToolStripMenuItem";
+            textureToolStripMenuItem.Size = new Size(57, 20);
+            textureToolStripMenuItem.Text = "Texture";
+            // 
+            // importDDSToolStripMenuItem
+            // 
+            importDDSToolStripMenuItem.Name = "importDDSToolStripMenuItem";
+            importDDSToolStripMenuItem.Size = new Size(144, 22);
+            importDDSToolStripMenuItem.Text = "Import DDS...";
+            importDDSToolStripMenuItem.Click += importDDSToolStripMenuItem_Click;
+            // 
+            // exportDDSToolStripMenuItem
+            // 
+            exportDDSToolStripMenuItem.Name = "exportDDSToolStripMenuItem";
+            exportDDSToolStripMenuItem.Size = new Size(144, 22);
+            exportDDSToolStripMenuItem.Text = "Export DDS...";
             // 
             // statusStrip1
             // 
@@ -228,7 +253,7 @@
             // 
             // panel4
             // 
-            panel4.Controls.Add(pictureBox1);
+            panel4.Controls.Add(texturePanel);
             panel4.Controls.Add(panel5);
             panel4.Dock = DockStyle.Fill;
             panel4.Location = new Point(0, 0);
@@ -236,15 +261,28 @@
             panel4.Size = new Size(637, 378);
             panel4.TabIndex = 5;
             // 
-            // pictureBox1
+            // panel6
             // 
-            pictureBox1.BackColor = Color.Silver;
-            pictureBox1.Dock = DockStyle.Fill;
-            pictureBox1.Location = new Point(0, 72);
-            pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(637, 306);
-            pictureBox1.TabIndex = 1;
-            pictureBox1.TabStop = false;
+            texturePanel.AutoScroll = true;
+            texturePanel.BackColor = Color.Silver;
+            texturePanel.Controls.Add(textureView);
+            texturePanel.Dock = DockStyle.Fill;
+            texturePanel.Location = new Point(0, 72);
+            texturePanel.Name = "panel6";
+            texturePanel.Size = new Size(637, 306);
+            texturePanel.TabIndex = 2;
+            texturePanel.Resize += texturePanel_Resize;
+            // 
+            // textureView
+            // 
+            textureView.BackColor = Color.LightGray;
+            textureView.BackgroundImage = Properties.Resources.bk;
+            textureView.Location = new Point(0, 0);
+            textureView.Name = "textureView";
+            textureView.Size = new Size(256, 256);
+            textureView.SizeMode = PictureBoxSizeMode.AutoSize;
+            textureView.TabIndex = 1;
+            textureView.TabStop = false;
             // 
             // panel5
             // 
@@ -373,7 +411,9 @@
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
             panel4.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            texturePanel.ResumeLayout(false);
+            texturePanel.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)textureView).EndInit();
             panel5.ResumeLayout(false);
             panel5.PerformLayout();
             panel3.ResumeLayout(false);
@@ -393,7 +433,7 @@
         private TreeView manifestTreeView;
         private Panel panel4;
         private Panel panel3;
-        private PictureBox pictureBox1;
+        private PictureBox textureView;
         private Panel panel5;
         private Button filterClear;
         private TreeView texturesTree;
@@ -408,10 +448,13 @@
         private Label label5;
         private Label mipMapsLabel;
         private Label label4;
-        private ToolStripProgressBar toolStripProgressBar1;
         private ToolStripStatusLabel totalTexturesStatusLabel;
         private ToolStripStatusLabel totalTexturesStatus;
         private ToolStripStatusLabel toolStripStatusLabel1;
         private ToolStripStatusLabel statusFiltered;
+        private ToolStripMenuItem textureToolStripMenuItem;
+        private ToolStripMenuItem importDDSToolStripMenuItem;
+        private ToolStripMenuItem exportDDSToolStripMenuItem;
+        private Panel texturePanel;
     }
 }

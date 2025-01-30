@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace MHTextureManager
 {

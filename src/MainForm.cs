@@ -1,5 +1,7 @@
-using System.Collections.Generic;
+
+using DDSLib;
 using System.Windows.Forms;
+using System.Windows.Media.Imaging;
 
 namespace MHTextureManager
 {
@@ -197,7 +199,60 @@ namespace MHTextureManager
             }
 
             texturesTree.Nodes.Add(rootNode);
-            texturesTree.ExpandAll(); 
+            texturesTree.ExpandAll();
+        }
+
+        private void importDDSToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "DDS Files (*.dds)|*.dds";
+                openFileDialog.Title = "Select a DDS File";
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string filename = openFileDialog.FileName;
+                    OpenDDS(filename);
+                }
+            }
+        }
+
+        private void OpenDDS(string filename)
+        {
+            var ddsFile = new DdsFile(filename);
+            textureView.Image = BitmapSourceToBitmap(ddsFile.BitmapSource);
+            CenterTexture();
+        }
+
+        private static Bitmap BitmapSourceToBitmap(BitmapSource bitmapSource)
+        {
+            Bitmap bitmap;
+
+            using (MemoryStream outStream = new())
+            {
+                BitmapEncoder encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+                encoder.Save(outStream);
+                bitmap = new Bitmap(outStream);
+            }
+
+            return bitmap;
+        }
+
+        private void texturePanel_Resize(object sender, EventArgs e)
+        {
+            CenterTexture();
+        }
+
+        private void CenterTexture()
+        {
+            if (textureView.Image != null)
+            {
+                int x = (texturePanel.ClientSize.Width - textureView.Width) / 2;
+                int y = (texturePanel.ClientSize.Height - textureView.Height) / 2;
+
+                textureView.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
+            }
         }
     }
 }
