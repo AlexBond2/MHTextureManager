@@ -1,11 +1,13 @@
 ﻿
 
-namespace DDSLib.Compression.LookupTables {
+namespace DDSLib.Compression.LookupTables
+{
 
-  internal sealed class SingleColourLookup {
+    internal sealed class SingleColourLookup
+    {
 
-    public SourceBlock[] sources;
+        public SourceBlock[] sources;
 
-  }
+    }
 
 }

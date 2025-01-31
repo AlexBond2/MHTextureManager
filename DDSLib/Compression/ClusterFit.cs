@@ -3,247 +3,265 @@
 using DDSLib.Constants;
 
 
-namespace DDSLib.Compression {
+namespace DDSLib.Compression
+{
 
-  internal class ClusterFit : ColourFit {
+    internal class ClusterFit : ColourFit
+    {
 
-    #region Private Fields
+        #region Private Fields
 
-    private float bestError;
+        private float bestError;
 
-    private Vec3 start;
-    private Vec3 end;
+        private Vec3 start;
+        private Vec3 end;
 
-    private Vec3 metric;
+        private Vec3 metric;
 
-    #endregion Private Fields
+        #endregion Private Fields
 
-    #region Constructor
+        #region Constructor
 
-    public ClusterFit(ColourSet Colours, SquishFlags Flags) : base(Colours, Flags) {
-      //
-      // initialise the metric
-      //
-      bool isPerceptual = (flags & SquishFlags.ColourMetricPerceptual) != 0;
+        public ClusterFit(ColourSet Colours, SquishFlags Flags) : base(Colours, Flags)
+        {
+            //
+            // initialise the metric
+            //
+            bool isPerceptual = (flags & SquishFlags.ColourMetricPerceptual) != 0;
 
-      metric = isPerceptual ? new Vec3(0.2126f, 0.7152f, 0.0722f) : new Vec3(1.0f);
-      //
-      // initialise the best error
-      //
-      bestError = Single.MaxValue;
-      //
-      // cache some values
-      //
-      int count = colours.Count;
+            metric = isPerceptual ? new Vec3(0.2126f, 0.7152f, 0.0722f) : new Vec3(1.0f);
+            //
+            // initialise the best error
+            //
+            bestError = Single.MaxValue;
+            //
+            // cache some values
+            //
+            int count = colours.Count;
 
-      Vec3[] values = colours.Points;
+            Vec3[] values = colours.Points;
 
-      float[] weights = colours.Weights;
-      //
-      // get the covariance matrix
-      //
-      Sym3x3 covariance = Maths.ComputeWeightedCovariance(count, values, weights);
-      //
-      // compute the principle component
-      //
-      Vec3 principle = Maths.ComputePrincipleComponent(covariance);
-      //
-      // get the min and max range as the codebook endpoints
-      //
-      Vec3 startTemp = new Vec3(0.0f);
-      Vec3   endTemp = new Vec3(0.0f);
+            float[] weights = colours.Weights;
+            //
+            // get the covariance matrix
+            //
+            Sym3x3 covariance = Maths.ComputeWeightedCovariance(count, values, weights);
+            //
+            // compute the principle component
+            //
+            Vec3 principle = Maths.ComputePrincipleComponent(covariance);
+            //
+            // get the min and max range as the codebook endpoints
+            //
+            Vec3 startTemp = new Vec3(0.0f);
+            Vec3 endTemp = new Vec3(0.0f);
 
-      if (count > 0) {
-        //
-        // compute the range
-        //
-        startTemp = endTemp = values[0];
+            if (count > 0)
+            {
+                //
+                // compute the range
+                //
+                startTemp = endTemp = values[0];
 
-        float min = Vec3.Dot(values[0], principle);
+                float min = Vec3.Dot(values[0], principle);
 
-        float max = min;
+                float max = min;
 
-        for(int i = 1; i < count; ++i) {
-          float val = Vec3.Dot(values[i], principle);
+                for (int i = 1; i < count; ++i)
+                {
+                    float val = Vec3.Dot(values[i], principle);
 
-          if (val < min) {
-            startTemp = values[i];
+                    if (val < min)
+                    {
+                        startTemp = values[i];
 
-            min = val;
-          }
-          else {
-            if (val > max) {
-              endTemp = values[i];
+                        min = val;
+                    }
+                    else
+                    {
+                        if (val > max)
+                        {
+                            endTemp = values[i];
 
-              max = val;
+                            max = val;
+                        }
+                    }
+                }
             }
-          }
+            //
+            // clamp the output to [0, 1]
+            //
+            Vec3 one = new Vec3(1.0f);
+            Vec3 zero = new Vec3(0.0f);
+
+            startTemp = Vec3.Min(one, Vec3.Max(zero, startTemp));
+            endTemp = Vec3.Min(one, Vec3.Max(zero, endTemp));
+            //
+            // clamp to the grid and save
+            //
+            Vec3 grid = new Vec3(31.0f, 63.0f, 31.0f);
+            Vec3 gridrcp = new Vec3(1.0f / 31.0f, 1.0f / 63.0f, 1.0f / 31.0f);
+            Vec3 half = new Vec3(0.5f);
+
+            start = Vec3.Truncate(grid * startTemp + half) * gridrcp;
+            end = Vec3.Truncate(grid * endTemp + half) * gridrcp;
         }
-      }
-      //
-      // clamp the output to [0, 1]
-      //
-      Vec3 one  = new Vec3(1.0f);
-      Vec3 zero = new Vec3(0.0f);
 
-      startTemp = Vec3.Min(one, Vec3.Max(zero, startTemp));
-      endTemp   = Vec3.Min(one, Vec3.Max(zero, endTemp));
-      //
-      // clamp to the grid and save
-      //
-      Vec3 grid    = new Vec3(31.0f, 63.0f, 31.0f);
-      Vec3 gridrcp = new Vec3(1.0f / 31.0f, 1.0f / 63.0f, 1.0f / 31.0f);
-      Vec3 half    = new Vec3(0.5f);
+        #endregion Constructor
 
-      start = Vec3.Truncate(grid * startTemp + half) * gridrcp;
-      end   = Vec3.Truncate(grid * endTemp   + half) * gridrcp;
-    }
+        #region Overrides
 
-    #endregion Constructor
+        protected override unsafe void Compress3(byte* block)
+        {
+            //
+            // cache some values
+            //
+            int count = colours.Count;
 
-    #region Overrides
+            Vec3[] values = colours.Points;
+            //
+            // create a codebook
+            //
+            Vec3[] codes = new Vec3[3];
 
-    protected override unsafe void Compress3(byte *block) {
-      //
-      // cache some values
-      //
-      int count = colours.Count;
+            codes[0] = start;
+            codes[1] = end;
+            codes[2] = 0.5f * start + 0.5f * end;
+            //
+            // match each point to the closest code
+            //
+            byte[] closest = new byte[16];
 
-      Vec3[] values = colours.Points;
-      //
-      // create a codebook
-      //
-      Vec3[] codes = new Vec3[3];
+            float error = 0.0f;
 
-      codes[0] = start;
-      codes[1] = end;
-      codes[2] = 0.5f * start + 0.5f * end;
-      //
-      // match each point to the closest code
-      //
-      byte[] closest = new byte[16];
+            for (int i = 0; i < count; ++i)
+            {
+                //
+                // find the closest code
+                //
+                float dist = Single.MaxValue;
 
-      float error = 0.0f;
+                int idx = 0;
 
-      for(int i = 0; i < count; ++i) {
-        //
-        // find the closest code
-        //
-        float dist = Single.MaxValue;
+                for (int j = 0; j < 3; ++j)
+                {
+                    float d = Vec3.LengthSquared(metric * (values[i] - codes[j]));
 
-        int idx = 0;
+                    if (d < dist)
+                    {
+                        dist = d;
 
-        for(int j = 0; j < 3; ++j) {
-          float d = Vec3.LengthSquared(metric * (values[i] - codes[j]));
+                        idx = j;
+                    }
+                }
+                //
+                // save the index
+                //
+                closest[i] = (byte)idx;
+                //
+                // accumulate the error
+                //
+                error += dist;
+            }
+            //
+            // save this scheme if it wins
+            //
+            if (error < bestError)
+            {
+                //
+                // remap the indices
+                //
+                byte[] indices = new byte[16];
 
-          if (d < dist) {
-            dist = d;
-
-            idx = j;
-          }
+                colours.RemapIndices(closest, indices);
+                //
+                // save the block
+                //
+                ColourBlock.WriteColourBlock3(start, end, indices, block);
+                //
+                // save the error
+                //
+                bestError = error;
+            }
         }
-        //
-        // save the index
-        //
-        closest[i] = (byte)idx;
-        //
-        // accumulate the error
-        //
-        error += dist;
-      }
-      //
-      // save this scheme if it wins
-      //
-      if (error < bestError) {
-        //
-        // remap the indices
-        //
-        byte[] indices = new byte[16];
 
-        colours.RemapIndices(closest, indices);
-        //
-        // save the block
-        //
-        ColourBlock.WriteColourBlock3(start, end, indices, block);
-        //
-        // save the error
-        //
-        bestError = error;
-      }
-    }
+        protected override unsafe void Compress4(byte* block)
+        {
+            //
+            // cache some values
+            //
+            int count = colours.Count;
 
-    protected override unsafe void Compress4(byte *block) {
-      //
-      // cache some values
-      //
-      int count = colours.Count;
+            Vec3[] values = colours.Points;
+            //
+            // create a codebook
+            //
+            Vec3[] codes = new Vec3[4];
 
-      Vec3[] values = colours.Points;
-      //
-      // create a codebook
-      //
-      Vec3[] codes = new Vec3[4];
+            codes[0] = start;
+            codes[1] = end;
+            codes[2] = 2.0f / 3.0f * start + 1.0f / 3.0f * end;
+            codes[3] = 1.0f / 3.0f * start + 2.0f / 3.0f * end;
+            //
+            // match each point to the closest code
+            //
+            byte[] closest = new byte[16];
 
-      codes[0] = start;
-      codes[1] = end;
-      codes[2] = 2.0f / 3.0f * start + 1.0f / 3.0f * end;
-      codes[3] = 1.0f / 3.0f * start + 2.0f / 3.0f * end;
-      //
-      // match each point to the closest code
-      //
-      byte[] closest = new byte[16];
+            float error = 0.0f;
 
-      float error = 0.0f;
+            for (int i = 0; i < count; ++i)
+            {
+                //
+                // find the closest code
+                //
+                float dist = Single.MaxValue;
 
-      for(int i = 0; i < count; ++i) {
-        //
-        // find the closest code
-        //
-        float dist = Single.MaxValue;
+                int idx = 0;
 
-        int idx = 0;
+                for (int j = 0; j < 4; ++j)
+                {
+                    float d = Vec3.LengthSquared(metric * (values[i] - codes[j]));
 
-        for(int j = 0; j < 4; ++j) {
-          float d = Vec3.LengthSquared(metric * (values[i] - codes[j]));
+                    if (d < dist)
+                    {
+                        dist = d;
 
-          if (d < dist) {
-            dist = d;
+                        idx = j;
+                    }
+                }
+                //
+                // save the index
+                //
+                closest[i] = (byte)idx;
+                //
+                // accumulate the error
+                //
+                error += dist;
+            }
+            //
+            // save this scheme if it wins
+            //
+            if (error < bestError)
+            {
+                //
+                // remap the indices
+                //
+                byte[] indices = new byte[16];
 
-            idx = j;
-          }
+                colours.RemapIndices(closest, indices);
+                //
+                // save the block
+                //
+                ColourBlock.WriteColourBlock4(start, end, indices, block);
+                //
+                // save the error
+                //
+                bestError = error;
+            }
         }
-        //
-        // save the index
-        //
-        closest[i] = (byte)idx;
-        //
-        // accumulate the error
-        //
-        error += dist;
-      }
-      //
-      // save this scheme if it wins
-      //
-      if (error < bestError) {
-        //
-        // remap the indices
-        //
-        byte[] indices = new byte[16];
 
-        colours.RemapIndices(closest, indices);
-        //
-        // save the block
-        //
-        ColourBlock.WriteColourBlock4(start, end, indices, block);
-        //
-        // save the error
-        //
-        bestError = error;
-      }
+        #endregion Overrides
+
     }
-
-    #endregion Overrides
-
-  }
 
 }

@@ -1,11 +1,13 @@
 ﻿
 
-namespace DDSLib.Constants {
+namespace DDSLib.Constants
+{
 
-  internal static class HeaderValues {
+    internal static class HeaderValues
+    {
 
-    public const uint DdsSignature = 0x20534444;
+        public const uint DdsSignature = 0x20534444;
 
-  }
+    }
 
 }

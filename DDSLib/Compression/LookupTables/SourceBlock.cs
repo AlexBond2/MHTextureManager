@@ -1,14 +1,16 @@
 ﻿
 
-namespace DDSLib.Compression.LookupTables {
+namespace DDSLib.Compression.LookupTables
+{
 
-  internal class SourceBlock {
+    internal class SourceBlock
+    {
 
-    public byte start;
-    public byte end;
+        public byte start;
+        public byte end;
 
-    public byte error;
+        public byte error;
 
-  }
+    }
 
 }

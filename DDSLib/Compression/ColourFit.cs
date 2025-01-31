@@ -1,50 +1,55 @@
 ﻿using DDSLib.Constants;
 
 
-namespace DDSLib.Compression {
+namespace DDSLib.Compression
+{
 
-  internal abstract class ColourFit {
+    internal abstract class ColourFit
+    {
 
-    #region Private Fields
+        #region Private Fields
 
-    protected ColourSet colours;
+        protected ColourSet colours;
 
-    protected SquishFlags flags;
+        protected SquishFlags flags;
 
-    #endregion Private Fields
+        #endregion Private Fields
 
-    #region Constructor
+        #region Constructor
 
-    protected ColourFit(ColourSet Colours, SquishFlags Flags) {
-      colours = Colours;
-      flags   = Flags;
+        protected ColourFit(ColourSet Colours, SquishFlags Flags)
+        {
+            colours = Colours;
+            flags = Flags;
+        }
+
+        #endregion Constructor
+
+        #region Public Methods
+
+        public unsafe void Compress(byte* block)
+        {
+            bool isDxt1 = (flags & SquishFlags.Dxt1) != 0;
+
+            if (isDxt1)
+            {
+                Compress3(block);
+
+                if (!colours.IsTransparent) Compress4(block);
+            }
+            else Compress4(block);
+        }
+
+        #endregion Public Methods
+
+        #region Protected Abstract Methods
+
+        protected abstract unsafe void Compress3(byte* block);
+
+        protected abstract unsafe void Compress4(byte* block);
+
+        #endregion Protected Abstract Methods
+
     }
-
-    #endregion Constructor
-
-    #region Public Methods
-
-    public unsafe void Compress(byte *block) {
-      bool isDxt1 = (flags & SquishFlags.Dxt1) != 0;
-
-      if (isDxt1) {
-        Compress3(block);
-
-        if (!colours.IsTransparent) Compress4(block);
-      }
-      else Compress4(block);
-    }
-
-    #endregion Public Methods
-
-    #region Protected Abstract Methods
-
-    protected abstract unsafe void Compress3(byte *block);
-
-    protected abstract unsafe void Compress4(byte *block);
-
-    #endregion Protected Abstract Methods
-
-  }
 
 }

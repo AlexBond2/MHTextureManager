@@ -1,10 +1,12 @@
 ﻿
 
-namespace DDSLib.Compression.LookupTables {
+namespace DDSLib.Compression.LookupTables
+{
 
-  internal static partial class SingleColourLookups {
+    internal static partial class SingleColourLookups
+    {
 
-    public static SingleColourLookup[] Lookup_5_4 = {
+        public static SingleColourLookup[] Lookup_5_4 = {
       new SingleColourLookup { sources = new SourceBlock[] { new SourceBlock { start =  0, end = 0, error = 0 }, new SourceBlock { start =  0, end =  0, error = 0 } } },
       new SingleColourLookup { sources = new SourceBlock[] { new SourceBlock { start =  0, end = 0, error = 1 }, new SourceBlock { start =  0, end =  1, error = 1 } } },
       new SingleColourLookup { sources = new SourceBlock[] { new SourceBlock { start =  0, end = 0, error = 2 }, new SourceBlock { start =  0, end =  1, error = 0 } } },
@@ -263,5 +265,5 @@ namespace DDSLib.Compression.LookupTables {
       new SingleColourLookup { sources = new SourceBlock[] { new SourceBlock { start = 31, end = 0, error = 0 }, new SourceBlock { start = 31, end = 31, error = 0 } } }
     };
 
-  }
+    }
 }
