@@ -19,7 +19,6 @@ namespace MHTextureManager
             rootNodes = new();
             textureCache = new();
             InitializeComponent();
-            manifestProgressBar.Visible = false;
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -44,8 +43,6 @@ namespace MHTextureManager
                     ManifestPath = Path.GetDirectoryName(filePath) ?? "";
 
                     manifestTreeView.Nodes.Clear();
-                    manifestProgressBar.Visible = true;
-                    manifestProgressBar.Value = 0;
 
                     Task.Run(() =>
                     {
@@ -54,7 +51,6 @@ namespace MHTextureManager
 
                         Invoke(new Action(() =>
                         {
-                            manifestProgressBar.Maximum = totalEntries;
                             totalTexturesStatus.Text = totalEntries.ToString();
                         }));
 
@@ -65,61 +61,47 @@ namespace MHTextureManager
                             manifestTreeView.BeginUpdate();
                             manifestTreeView.Nodes.AddRange([.. rootNodes]);
                             manifestTreeView.EndUpdate();
-                            manifestProgressBar.Value = manifestProgressBar.Maximum;
-                        }));
 
-                        Invoke(new Action(() =>
-                        {
                             statusFiltered.Text = manifestTreeView.Nodes.Count.ToString();
-                            manifestProgressBar.Visible = false;
                         }));
                     });
                 }
             }
         }
 
+
         private void BuildTree(List<TextureEntry> entries)
         {
             rootNodes.Clear();
-            int count = 0;
 
-            foreach (var entry in entries)
+            var groupedEntries = entries.GroupBy(entry => entry.Head.TextureName.Split('.')[0]).ToList();
+
+            foreach (var group in groupedEntries)
             {
-                string[] parts = entry.Head.TextureName.Split('.');
-                TreeNode? currentNode = null;
+                var rootNode = new TreeNode(group.Key);
+                rootNodes.Add(rootNode);
 
-                foreach (var part in parts)
-                {
-                    if (currentNode == null)
-                    {
-                        currentNode = rootNodes.FirstOrDefault(n => n.Text == part);
+                Task.Run(() => AddChildNodes(rootNode, [.. group]));
+            }
+        }
 
-                        if (currentNode == null)
-                        {
-                            currentNode = new TreeNode(part);
-                            rootNodes.Add(currentNode);
-                        }
-                    }
-                    else
-                    {
-                        TreeNode? childNode = currentNode.Nodes.Cast<TreeNode>()
-                                                              .FirstOrDefault(n => n.Text == part);
+        private void AddChildNodes(TreeNode parentNode, List<TextureEntry> entries)
+        {
+            if (entries.Count == 0) return;
 
-                        if (childNode == null)
-                        {
-                            childNode = new TreeNode(part);
-                            currentNode.Nodes.Add(childNode);
-                        }
+            var groupedEntries = entries.GroupBy(entry =>
+            {
+                var parts = entry.Head.TextureName.Split('.');
+                return parts.Length > parentNode.Level + 1 ? parts[parentNode.Level + 1] : null;
+            }).Where(g => g.Key != null).ToList();
 
-                        currentNode = childNode;
-                    }
+            foreach (var group in groupedEntries)
+            {
+                var childNode = new TreeNode(group.Key);
+                childNode.Tag = group.FirstOrDefault(entry => entry.Head.TextureName.Split('.').Length == parentNode.Level + 2);
+                parentNode.Nodes.Add(childNode);
 
-                    if (Array.IndexOf(parts, part) == parts.Length - 1)
-                        currentNode.Tag = entry;
-                }
-
-                if (++count % 100 == 0)
-                    Invoke(new Action(() => manifestProgressBar.Value += 100));
+                AddChildNodes(childNode, [.. group]);
             }
         }
 
@@ -234,7 +216,7 @@ namespace MHTextureManager
 
         private void importDDSToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            
+
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
                 openFileDialog.Filter = "DDS Files (*.dds)|*.dds";
@@ -246,7 +228,7 @@ namespace MHTextureManager
                     ImportDds(filename);
                 }
             }
-            
+
         }
 
         private void ImportDds(string filename)
@@ -300,7 +282,7 @@ namespace MHTextureManager
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    string filename = saveFileDialog.FileName; 
+                    string filename = saveFileDialog.FileName;
                     var stream = textureCache.Texture2D.GetObjectStream(0);
                     if (stream == null) return;
 

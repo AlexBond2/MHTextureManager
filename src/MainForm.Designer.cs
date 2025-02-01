@@ -42,7 +42,6 @@
             statusFiltered = new ToolStripStatusLabel();
             splitContainer1 = new SplitContainer();
             panel2 = new Panel();
-            manifestProgressBar = new ProgressBar();
             manifestTreeView = new TreeView();
             panel1 = new Panel();
             filterClear = new Button();
@@ -181,21 +180,12 @@
             // 
             // panel2
             // 
-            panel2.Controls.Add(manifestProgressBar);
             panel2.Controls.Add(manifestTreeView);
             panel2.Dock = DockStyle.Fill;
             panel2.Location = new Point(0, 32);
             panel2.Name = "panel2";
             panel2.Size = new Size(245, 596);
             panel2.TabIndex = 2;
-            // 
-            // manifestProgressBar
-            // 
-            manifestProgressBar.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            manifestProgressBar.Location = new Point(8, 8);
-            manifestProgressBar.Name = "manifestProgressBar";
-            manifestProgressBar.Size = new Size(230, 23);
-            manifestProgressBar.TabIndex = 1;
             // 
             // manifestTreeView
             // 
@@ -440,7 +430,6 @@
         private TreeView texturesTree;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem openToolStripMenuItem;
-        private ProgressBar manifestProgressBar;
         private Label textureGuidLabel;
         private Label label2;
         private Label textureNameLabel;
