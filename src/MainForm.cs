@@ -285,8 +285,9 @@ namespace MHTextureManager
 
             using (SaveFileDialog saveFileDialog = new SaveFileDialog())
             {
+                saveFileDialog.FileName = textureNameLabel.Text + ".dds";
                 saveFileDialog.Filter = "DDS Files (*.dds)|*.dds";
-                saveFileDialog.Title = "Select a DDS File";
+                saveFileDialog.Title = "Save a DDS File";
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
