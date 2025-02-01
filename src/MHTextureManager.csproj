@@ -17,7 +17,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DDSLib\DDSLib.csproj" />
+    <ProjectReference Include="..\UpkManager\UpkManager.csproj" />
   </ItemGroup>
+  
+  <Target Name="CopyDlls" AfterTargets="AfterBuild">
+    <Copy SourceFiles="..\UpkManager\Compression\lib64\lzo2_64.dll" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="..\UpkManager\Compression\lib64\msvcr100.dll" DestinationFolder="$(OutDir)" />
+  </Target>
 
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">

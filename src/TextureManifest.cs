@@ -33,8 +33,8 @@ namespace MHTextureManager
 
         public TextureEntry(BinaryReader reader)
         {
-            Head = new (reader);
-            Data = new (reader);
+            Head = new(reader);
+            Data = new(reader);
         }
     }
 
@@ -53,6 +53,9 @@ namespace MHTextureManager
         {
             uint length = reader.ReadUInt32();
             byte[] stringBytes = reader.ReadBytes((int)length);
+            int nullIndex = Array.IndexOf(stringBytes, (byte)0);
+            if (nullIndex >= 0)
+                stringBytes = stringBytes[..nullIndex];
             return Encoding.UTF8.GetString(stringBytes);
         }
     }

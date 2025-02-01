@@ -1,6 +1,4 @@
-
 using DDSLib;
-using System.Windows.Forms;
 using System.Windows.Media.Imaging;
 
 namespace MHTextureManager
@@ -9,11 +7,17 @@ namespace MHTextureManager
     {
         private TextureManifest manifest;
         private List<TreeNode> rootNodes;
+        private DdsFile ddsFile;
+        private TextureFileCache textureCache;
+
+        public string ManifestPath;
 
         public MainForm()
         {
+            ddsFile = new();
             manifest = new();
             rootNodes = new();
+            textureCache = new();
             InitializeComponent();
             manifestProgressBar.Visible = false;
         }
@@ -37,6 +41,7 @@ namespace MHTextureManager
                     }
 
                     string filePath = openFileDialog.FileName;
+                    ManifestPath = Path.GetDirectoryName(filePath) ?? "";
 
                     manifestTreeView.Nodes.Clear();
                     manifestProgressBar.Visible = true;
@@ -176,7 +181,23 @@ namespace MHTextureManager
                 textureFileLabel.Text = entry.Data.TextureFileName;
 
                 UpdateTexturesTree(entry);
+                LoadTextureCache(entry);
             }
+        }
+
+        private void LoadTextureCache(TextureEntry entry)
+        {
+            string tfcPath = Path.Combine(ManifestPath, entry.Data.TextureFileName + ".tfc");
+            if (entry.Data.Maps.Count == 0) return;
+            if (textureCache.LoadFromFile(tfcPath, entry) && textureCache.Texture2D.MipMaps.Count > 0)
+            {
+                var stream = textureCache.Texture2D.GetObjectStream(0);
+                ddsFile.Load(stream);
+                textureView.Image = BitmapSourceToBitmap(ddsFile.BitmapSource);
+                CenterTexture();
+            }
+            else MessageBox.Show($"Can't Load TFC: {entry.Head.TextureName}\nFile: {tfcPath}",
+                                 "Error load", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         private void UpdateTexturesTree(TextureEntry entry)
@@ -204,6 +225,7 @@ namespace MHTextureManager
 
         private void importDDSToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
                 openFileDialog.Filter = "DDS Files (*.dds)|*.dds";
@@ -212,16 +234,18 @@ namespace MHTextureManager
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     string filename = openFileDialog.FileName;
-                    OpenDDS(filename);
+                    ImportDds(filename);
                 }
             }
+            
         }
 
-        private void OpenDDS(string filename)
+        private void ImportDds(string filename)
         {
-            var ddsFile = new DdsFile(filename);
+            ddsFile = new DdsFile(filename);
             textureView.Image = BitmapSourceToBitmap(ddsFile.BitmapSource);
             CenterTexture();
+            MessageBox.Show("Import not ready!", "TODO", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private static Bitmap BitmapSourceToBitmap(BitmapSource bitmapSource)
@@ -252,6 +276,28 @@ namespace MHTextureManager
                 int y = (texturePanel.ClientSize.Height - textureView.Height) / 2;
 
                 textureView.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
+            }
+        }
+
+        private void exportDDSToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (textureCache.Texture2D.MipMaps.Count == 0) return;
+
+            using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+            {
+                saveFileDialog.Filter = "DDS Files (*.dds)|*.dds";
+                saveFileDialog.Title = "Select a DDS File";
+
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string filename = saveFileDialog.FileName; 
+                    var stream = textureCache.Texture2D.GetObjectStream(0);
+                    if (stream == null) return;
+
+                    using var fileStream = new FileStream(filename, FileMode.Create, FileAccess.Write);
+                    stream.Seek(0, SeekOrigin.Begin);
+                    stream.CopyTo(fileStream);
+                }
             }
         }
     }

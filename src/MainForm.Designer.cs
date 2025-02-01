@@ -110,15 +110,16 @@
             // importDDSToolStripMenuItem
             // 
             importDDSToolStripMenuItem.Name = "importDDSToolStripMenuItem";
-            importDDSToolStripMenuItem.Size = new Size(144, 22);
+            importDDSToolStripMenuItem.Size = new Size(180, 22);
             importDDSToolStripMenuItem.Text = "Import DDS...";
             importDDSToolStripMenuItem.Click += importDDSToolStripMenuItem_Click;
             // 
             // exportDDSToolStripMenuItem
             // 
             exportDDSToolStripMenuItem.Name = "exportDDSToolStripMenuItem";
-            exportDDSToolStripMenuItem.Size = new Size(144, 22);
+            exportDDSToolStripMenuItem.Size = new Size(180, 22);
             exportDDSToolStripMenuItem.Text = "Export DDS...";
+            exportDDSToolStripMenuItem.Click += exportDDSToolStripMenuItem_Click;
             // 
             // statusStrip1
             // 
@@ -261,14 +262,14 @@
             panel4.Size = new Size(637, 378);
             panel4.TabIndex = 5;
             // 
-            // panel6
+            // texturePanel
             // 
             texturePanel.AutoScroll = true;
             texturePanel.BackColor = Color.Silver;
             texturePanel.Controls.Add(textureView);
             texturePanel.Dock = DockStyle.Fill;
             texturePanel.Location = new Point(0, 72);
-            texturePanel.Name = "panel6";
+            texturePanel.Name = "texturePanel";
             texturePanel.Size = new Size(637, 306);
             texturePanel.TabIndex = 2;
             texturePanel.Resize += texturePanel_Resize;

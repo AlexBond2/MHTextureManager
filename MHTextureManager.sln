@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MHTextureManager", "src\MHT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DDSLib", "DDSLib\DDSLib.csproj", "{63287C47-8658-4401-9C51-D06C2A95AF99}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UpkManager", "UpkManager\UpkManager.csproj", "{04C2CFAF-8F1E-4631-88A6-0B9DC017452E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,10 @@ Global
 		{63287C47-8658-4401-9C51-D06C2A95AF99}.Debug|x64.Build.0 = Debug|x64
 		{63287C47-8658-4401-9C51-D06C2A95AF99}.Release|x64.ActiveCfg = Release|x64
 		{63287C47-8658-4401-9C51-D06C2A95AF99}.Release|x64.Build.0 = Release|x64
+		{04C2CFAF-8F1E-4631-88A6-0B9DC017452E}.Debug|x64.ActiveCfg = Debug|x64
+		{04C2CFAF-8F1E-4631-88A6-0B9DC017452E}.Debug|x64.Build.0 = Debug|x64
+		{04C2CFAF-8F1E-4631-88A6-0B9DC017452E}.Release|x64.ActiveCfg = Release|x64
+		{04C2CFAF-8F1E-4631-88A6-0B9DC017452E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
