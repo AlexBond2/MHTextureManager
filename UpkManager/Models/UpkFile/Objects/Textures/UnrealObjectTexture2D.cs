@@ -96,7 +96,7 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
 
             await header.ReadCompressedChunkHeader(upkReader, 1, 0, 0).ConfigureAwait(false);
 
-            if (TryGetImageProperties(header, out int width, out int height, out int size, out FileFormat format))
+            if (TryGetImageProperties(header, out int width, out int height, out FileFormat format))
             {
                 UnrealMipMap mip = new()
                 {
@@ -113,50 +113,43 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
 
         }
 
-        public bool TryGetImageProperties(UnrealCompressedChunkHeader header, out int width, out int height, out int size, out FileFormat ddsFormat)
+        public bool TryGetImageProperties(UnrealCompressedChunkHeader header, out int width, out int height, out FileFormat ddsFormat)
         {
             switch (header.Blocks.Count)
             {
                 case 2:
                     width = 512;
                     height = 512;
-                    size = width * height;
                     ddsFormat = FileFormat.DXT5;
                     break;
                 case 4:
                     width = 1024;
                     height = 1024;
-                    size = width * height / 2;
                     ddsFormat = FileFormat.DXT1;
                     break;
                 case 8:
                     width = 1024;
                     height = 1024;
-                    size = width * height;
                     ddsFormat = FileFormat.DXT5;
                     break;
                 case 16:
                     width = 2048;
                     height = 2048;
-                    size = width * height / 2;
                     ddsFormat = FileFormat.DXT1;
                     break;
                 case 32:
                     width = 2048;
                     height = 2048;
-                    size = width * height;
                     ddsFormat = FileFormat.DXT5;
                     break;
                 case 64:
                     width = 4096;
                     height = 4096;
-                    size = width * height / 2;
                     ddsFormat = FileFormat.DXT1;
                     break;
                 case 128:
                     width = 4096;
                     height = 4096;
-                    size = width * height;
                     ddsFormat = FileFormat.DXT5;
                     break;
                 default:
@@ -165,50 +158,67 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
                         case 0x0800:
                             width = 64;
                             height = 64;
-                            size = width * height / 2;
                             ddsFormat = FileFormat.DXT1;
                             break;
                         case 0x1000:
                             width = 64;
                             height = 64;
-                            size = width * height;
                             ddsFormat = FileFormat.DXT5;
                             break;
                         case 0x2000:
                             width = 128;
                             height = 128;
-                            size = width * height / 2;
+                            ddsFormat = FileFormat.DXT1;
+                            break;
+                        case 0x2FD0:
+                            width = 180;
+                            height = 136;
                             ddsFormat = FileFormat.DXT1;
                             break;
                         case 0x4000:
                             width = 128;
                             height = 128;
-                            size = width * height;
+                            ddsFormat = FileFormat.DXT5;
+                            break;
+                        case 0x5FA0:
+                            width = 180;
+                            height = 136;
                             ddsFormat = FileFormat.DXT5;
                             break;
                         case 0x8000:
                             width = 256;
                             height = 256;
-                            size = width * height / 2;
+                            ddsFormat = FileFormat.DXT1;
+                            break;
+                        case 0xBF40:
+                            width = 360;
+                            height = 272;
+                            ddsFormat = FileFormat.DXT1;
+                            break;
+                        case 0xDAC0:
+                            width = 280;
+                            height = 400;
                             ddsFormat = FileFormat.DXT1;
                             break;
                         case 0x10000:
                             width = 256;
                             height = 256;
-                            size = width * height;
+                            ddsFormat = FileFormat.DXT5;
+                            break;
+                        case 0x1EC30:
+                            width = 300;
+                            height = 420;
                             ddsFormat = FileFormat.DXT5;
                             break;
                         case 0x20000:
                             width = 512;
                             height = 512;
-                            size = width * height / 2;
                             ddsFormat = FileFormat.DXT1;
                             break;
                         default:
                             width = 0;
                             height = 0;
                             ddsFormat = FileFormat.Unknown;
-                            size = 0;
                             return false;
                     }
                     break;
