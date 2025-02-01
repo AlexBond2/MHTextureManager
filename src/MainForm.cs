@@ -60,9 +60,11 @@ namespace MHTextureManager
 
                         BuildTree(entries);
 
-                        Invoke(new Action(() =>
+                        BeginInvoke(new Action(() =>
                         {
+                            manifestTreeView.BeginUpdate();
                             manifestTreeView.Nodes.AddRange([.. rootNodes]);
+                            manifestTreeView.EndUpdate();
                             manifestProgressBar.Value = manifestProgressBar.Maximum;
                         }));
 
@@ -79,6 +81,7 @@ namespace MHTextureManager
         private void BuildTree(List<TextureEntry> entries)
         {
             rootNodes.Clear();
+            int count = 0;
 
             foreach (var entry in entries)
             {
@@ -115,10 +118,8 @@ namespace MHTextureManager
                         currentNode.Tag = entry;
                 }
 
-                Invoke(new Action(() =>
-                {
-                    manifestProgressBar.Value++;
-                }));
+                if (++count % 100 == 0)
+                    Invoke(new Action(() => manifestProgressBar.Value += 100));
             }
         }
 
@@ -140,11 +141,14 @@ namespace MHTextureManager
             filterText = filterText.Trim().ToLower();
             if (filterText.Length < 3 || rootNodes.Count == 0) return false;
 
+            manifestTreeView.BeginUpdate();
             manifestTreeView.Nodes.Clear();
 
             foreach (TreeNode rootNode in rootNodes)
                 if (FilterNode(rootNode, filterText))
                     manifestTreeView.Nodes.Add(rootNode);
+
+            manifestTreeView.EndUpdate();
 
             return manifestTreeView.Nodes.Count > 0;
         }
@@ -166,8 +170,11 @@ namespace MHTextureManager
             filterBox.Text = "";
             if (rootNodes.Count == 0) return;
 
+            manifestTreeView.BeginUpdate();
             manifestTreeView.Nodes.Clear();
             manifestTreeView.Nodes.AddRange([.. rootNodes]);
+            manifestTreeView.EndUpdate();
+
             statusFiltered.Text = manifestTreeView.Nodes.Count.ToString();
         }
 
@@ -202,6 +209,7 @@ namespace MHTextureManager
 
         private void UpdateTexturesTree(TextureEntry entry)
         {
+            texturesTree.BeginUpdate();
             texturesTree.Nodes.Clear();
 
             var rootNode = new TreeNode(entry.Data.TextureFileName);
@@ -221,6 +229,7 @@ namespace MHTextureManager
 
             texturesTree.Nodes.Add(rootNode);
             texturesTree.ExpandAll();
+            texturesTree.EndUpdate();
         }
 
         private void importDDSToolStripMenuItem_Click(object sender, EventArgs e)
