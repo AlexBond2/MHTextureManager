@@ -71,7 +71,7 @@ namespace MHTextureManager
         private void CheckAllTextures(List<TextureEntry> entries)
         {
             string notfound = "NotFound.tsv";
-            string found = "TextureInfo.tsv";
+            string found = "FoundInfo.tsv";
             string notLoad = "NotLoad.tsv";
 
             Invoke(new Action(() => progressBar.Maximum = entries.Count));
@@ -87,6 +87,10 @@ namespace MHTextureManager
 
                     if (textureCache.LoadFromFile(tfcPath, entry))
                     {
+                        /*if (mipmap.ImageData[0] == 10)
+                            AddToFile($"{entry.Head.TextureGUID}\t{index}\t{mipmap.Width}\t{mipmap.Height}\t{mipmap.OverrideFormat}", found);*/
+
+                        /*
                         var stream = textureCache.Texture2D.GetObjectStream(0);
                         if (stream != null)
                         {
@@ -94,7 +98,7 @@ namespace MHTextureManager
                             using var fileStream = new FileStream(filename, FileMode.Create, FileAccess.Write);
                             stream.Seek(0, SeekOrigin.Begin);
                             stream.CopyTo(fileStream);
-                        }
+                        }*/
                     }
                     else
                         AddToFile($"{entry.Head.TextureName}\t{entry.Head.TextureGUID}\t{index}\t{mipmap.Width}\t{mipmap.Height}\t{mipmap.OverrideFormat}", notLoad);
