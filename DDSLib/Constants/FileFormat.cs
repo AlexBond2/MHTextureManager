@@ -19,8 +19,8 @@ namespace DDSLib.Constants
         A4R4G4B4,
         R8G8B8,
         R5G6B5,
-        G8
-
+        G8,
+        V8U8
     }
 
 }

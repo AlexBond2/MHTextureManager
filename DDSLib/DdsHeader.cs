@@ -76,6 +76,7 @@ namespace DDSLib
                     case FileFormat.A1R5G5B5:
                     case FileFormat.A4R4G4B4:
                     case FileFormat.R5G6B5:
+                    case FileFormat.V8U8:
                         {
                             pixelWidth = 2;
 

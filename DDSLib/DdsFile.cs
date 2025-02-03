@@ -179,6 +179,9 @@ namespace DDSLib
                 else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.Gray) && (header.PixelFormat.RgbBitCount == 8) &&
                          (header.PixelFormat.RBitMask == 0x000000ff) && (header.PixelFormat.GBitMask == 0x00000000) &&
                          (header.PixelFormat.BBitMask == 0x00000000) && (header.PixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.G8;
+                else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.VU) && (header.PixelFormat.RgbBitCount == 16) &&
+                         (header.PixelFormat.RBitMask == 0x000000ff) && (header.PixelFormat.GBitMask == 0x0000ff00) &&
+                         (header.PixelFormat.BBitMask == 0x00000000) && (header.PixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.V8U8;
                 //
                 // If fileFormat is still invalid, then it's an unsupported format.
                 //
@@ -329,6 +332,16 @@ namespace DDSLib
 
                                     break;
                                 }
+                            case FileFormat.V8U8:
+                                {
+                                    pixelAlpha = 0xff;
+
+                                    pixelRed = (byte)(((sbyte)(pixelColour& 0xff)) + 128);
+                                    pixelGreen = (byte)(((sbyte)((pixelColour >> 8) & 0xff)) + 128);
+                                    pixelBlue = 0xff;
+
+                                    break;
+                                }
                             case FileFormat.R5G6B5:
                                 {
                                     pixelAlpha = 0xff;
@@ -468,6 +481,15 @@ namespace DDSLib
                                 pixelData = ((uint)R << 16) |
                                             ((uint)G << 8) |
                                             ((uint)B << 0);
+                                break;
+                            }
+                        case FileFormat.V8U8:
+                            {
+                                sbyte u = (sbyte)(R - 128);
+                                sbyte v = (sbyte)(G - 128);
+
+                                pixelData = ((uint)(byte)u) |
+                                            ((uint)(byte)v << 8);
                                 break;
                             }
                         case FileFormat.R5G6B5:

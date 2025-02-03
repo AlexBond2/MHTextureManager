@@ -128,6 +128,21 @@ namespace DDSLib
 
                         break;
                     }
+                case FileFormat.V8U8:
+                    {
+                        Flags = (int)PixelFormatFlags.VU;
+
+                        RgbBitCount = 16;
+
+                        FourCC = 0;
+
+                        RBitMask = 0x000000ff;
+                        GBitMask = 0x0000ff00;
+                        BBitMask = 0x00000000;
+                        ABitMask = 0x00000000;
+
+                        break;
+                    }
                 case FileFormat.R8G8B8:
                     {
                         Flags = (int)PixelFormatFlags.RGB;
