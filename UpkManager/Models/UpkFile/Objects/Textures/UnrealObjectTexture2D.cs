@@ -90,13 +90,13 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
             MipMapsCount = count;
         }
 
-        public async Task ReadMipMapCache(ByteArrayReader upkReader)
+        public async Task ReadMipMapCache(ByteArrayReader upkReader, uint index, UnrealMipMap overrideMipMap)
         {
             var header = new UnrealCompressedChunkHeader();
 
             await header.ReadCompressedChunkHeader(upkReader, 1, 0, 0).ConfigureAwait(false);
 
-            if (TryGetImageProperties(header, out int width, out int height, out FileFormat format))
+            if (TryGetImageProperties(header, (int)index, overrideMipMap, out int width, out int height, out FileFormat format))
             {
                 UnrealMipMap mip = new()
                 {
@@ -113,8 +113,25 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
 
         }
 
-        public bool TryGetImageProperties(UnrealCompressedChunkHeader header, out int width, out int height, out FileFormat ddsFormat)
+        public bool TryGetImageProperties(UnrealCompressedChunkHeader header, int index, UnrealMipMap overrideMipMap, out int width, out int height, out FileFormat ddsFormat)
         {
+            if (overrideMipMap.Width > 0)
+            {
+                int shift = overrideMipMap.ImageData[0] - index;
+                if (shift < 0)
+                {
+                    width = overrideMipMap.Width << -shift;
+                    height = overrideMipMap.Height << -shift;
+                }
+                else
+                {
+                    width = overrideMipMap.Width >> shift;
+                    height = overrideMipMap.Height >> shift;
+                }
+                ddsFormat = overrideMipMap.OverrideFormat;
+                return true;
+            }
+
             switch (header.Blocks.Count)
             {
                 case 2:

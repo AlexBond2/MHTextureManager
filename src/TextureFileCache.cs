@@ -28,7 +28,9 @@ namespace MHTextureManager
                     fs.Seek(mipMap.Offset, SeekOrigin.Begin);
                     byte[] textureData = reader.ReadBytes((int)mipMap.Size);
                     var upkReader = ByteArrayReader.CreateNew(textureData, 0);
-                    Texture2D.ReadMipMapCache(upkReader).Wait();
+                    var overrideMipMap = entry.Data.OverrideMipMap;
+
+                    Texture2D.ReadMipMapCache(upkReader, mipMap.Index, overrideMipMap).Wait();
                     break;
                 }
             }

@@ -1,4 +1,6 @@
 ﻿using System.Text;
+using DDSLib.Constants;
+using UpkManager.Models.UpkFile.Objects.Textures;
 
 namespace MHTextureManager
 {
@@ -21,9 +23,71 @@ namespace MHTextureManager
                     Entries[entry.Head.TextureGUID] = entry;
                 }
             }
+            
+            // TODO replace to TextureInfo.bin
+            string tfcPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextureInfo.tsv");
+            if (File.Exists(tfcPath))
+                ProcessTfcFile(tfcPath);
 
             return [.. Entries.Values.OrderBy(entry => entry.Head.TextureName)];
         }
+
+        private void ProcessTfcFile(string tfcFilePath)
+        {
+            using var sr = new StreamReader(tfcFilePath);
+            string? headerLine = sr.ReadLine();
+
+            while (!sr.EndOfStream)
+            {
+                string? line = sr.ReadLine();
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                string[] parts = line.Split('\t');
+                if (parts.Length < 5) continue;
+
+                string guidStr = parts[0].Trim();
+                string indexStr = parts[1].Trim();
+                string widthStr = parts[2].Trim();
+                string heightStr = parts[3].Trim();
+                string formatStr = parts[4].Trim();
+
+                Guid guid = new(guidStr);
+
+                if (!int.TryParse(indexStr, out int index)) continue;
+                if (!int.TryParse(widthStr, out int width)) continue;
+                if (!int.TryParse(heightStr, out int height)) continue;
+                if (!FileFormat.TryParse(formatStr, out FileFormat overrideFormat)) continue;
+
+                if (!Entries.TryGetValue(guid, out TextureEntry entry))
+                {
+                    Log($"Not found: {guid}");
+                }
+                else
+                {
+                    entry.Data.OverrideMipMap.Width = width;
+                    entry.Data.OverrideMipMap.Height = height;
+                    entry.Data.OverrideMipMap.OverrideFormat = overrideFormat;
+                    entry.Data.OverrideMipMap.ImageData = [(byte)index];
+                }
+            }
+        }
+
+        private void Log(string message)
+        {
+            string filePath = "log.txt";
+
+            try
+            {
+                using StreamWriter writer = new StreamWriter(filePath, true);
+                writer.WriteLine($"{DateTime.Now}: {message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error to write {filePath}: {ex.Message}");
+            }
+        }
+
     }
 
     public class TextureEntry
@@ -79,10 +143,12 @@ namespace MHTextureManager
     public class TextureMipMaps
     {
         public string TextureFileName;
+        public UnrealMipMap OverrideMipMap;
         public List<TextureMipMap> Maps;
 
         public TextureMipMaps(BinaryReader reader)
         {
+            OverrideMipMap = new();
             TextureFileName = TextureHead.ReadString(reader);
 
             uint num = reader.ReadUInt32();

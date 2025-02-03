@@ -47,12 +47,10 @@ namespace MHTextureManager
                     Task.Run(() =>
                     {
                         var entries = manifest.LoadManifestFromFile(filePath);
+                        // CheckAllTextures(entries);
                         int totalEntries = entries.Count;
 
-                        Invoke(new Action(() =>
-                        {
-                            totalTexturesStatus.Text = totalEntries.ToString();
-                        }));
+                        Invoke(new Action(() => totalTexturesStatus.Text = totalEntries.ToString()));
 
                         BuildTree(entries);
 
@@ -69,6 +67,51 @@ namespace MHTextureManager
             }
         }
 
+        
+        private void CheckAllTextures(List<TextureEntry> entries)
+        {
+            string notfound = "NotFound.tsv";
+            string found = "TextureInfo.tsv";
+            string notLoad = "NotLoad.tsv";
+
+            Invoke(new Action(() => progressBar.Maximum = entries.Count));
+
+            foreach (var entry in entries)
+            {
+                var mipmap = entry.Data.OverrideMipMap;
+                if (mipmap.ImageData != null)
+                {
+                    if (entry.Data.Maps.Count == 0) continue;
+                    int index = mipmap.ImageData[0];
+                    string tfcPath = Path.Combine(ManifestPath, entry.Data.TextureFileName + ".tfc");
+
+                    if (textureCache.LoadFromFile(tfcPath, entry))
+                    {
+                        var stream = textureCache.Texture2D.GetObjectStream(0);
+                        if (stream != null)
+                        {
+                            string filename = Path.Combine("Out", entry.Head.TextureName + ".dds");
+                            using var fileStream = new FileStream(filename, FileMode.Create, FileAccess.Write);
+                            stream.Seek(0, SeekOrigin.Begin);
+                            stream.CopyTo(fileStream);
+                        }
+                    }
+                    else
+                        AddToFile($"{entry.Head.TextureName}\t{entry.Head.TextureGUID}\t{index}\t{mipmap.Width}\t{mipmap.Height}\t{mipmap.OverrideFormat}", notLoad);
+                }/*
+                else
+                {
+                    AddToFile($"{entry.Head.TextureName}\t{entry.Head.TextureGUID}\t{entry.Data.Maps.Count}", notfound);
+                }*/
+                BeginInvoke(new Action(() => progressBar.Value++));
+            }
+        }
+
+        private void AddToFile(string message, string filePath)
+        {
+            using var writer = new StreamWriter(filePath, true);
+            writer.WriteLine(message);            
+        }
 
         private void BuildTree(List<TextureEntry> entries)
         {
@@ -180,6 +223,7 @@ namespace MHTextureManager
             if (entry.Data.Maps.Count == 0) return;
             if (textureCache.LoadFromFile(tfcPath, entry) && textureCache.Texture2D.MipMaps.Count > 0)
             {
+                UpdateTextureInfo((int)entry.Data.Maps[0].Index);
                 var stream = textureCache.Texture2D.GetObjectStream(0);
                 ddsFile.Load(stream);
                 textureView.Image = BitmapSourceToBitmap(ddsFile.BitmapSource);
@@ -187,6 +231,15 @@ namespace MHTextureManager
             }
             else MessageBox.Show($"Can't Load TFC: {entry.Head.TextureName}\nFile: {tfcPath}",
                                  "Error load", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private void UpdateTextureInfo(int index)
+        {
+            var mipMap = textureCache.Texture2D.MipMaps[0];
+            formatLabel.Text = mipMap.OverrideFormat.ToString();
+            widthLabel.Text = mipMap.Width.ToString();
+            heightLabel.Text = mipMap.Height.ToString();
+            indexLabel.Text = index.ToString();
         }
 
         private void UpdateTexturesTree(TextureEntry entry)

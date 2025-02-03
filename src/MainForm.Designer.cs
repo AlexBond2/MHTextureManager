@@ -40,6 +40,7 @@
             totalTexturesStatus = new ToolStripStatusLabel();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
             statusFiltered = new ToolStripStatusLabel();
+            progressBar = new ToolStripProgressBar();
             splitContainer1 = new SplitContainer();
             panel2 = new Panel();
             manifestTreeView = new TreeView();
@@ -51,6 +52,10 @@
             texturePanel = new Panel();
             textureView = new PictureBox();
             panel5 = new Panel();
+            label6 = new Label();
+            label7 = new Label();
+            label8 = new Label();
+            label9 = new Label();
             textureFileLabel = new Label();
             label5 = new Label();
             mipMapsLabel = new Label();
@@ -61,6 +66,10 @@
             label2 = new Label();
             panel3 = new Panel();
             texturesTree = new TreeView();
+            heightLabel = new Label();
+            indexLabel = new Label();
+            widthLabel = new Label();
+            formatLabel = new Label();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -109,20 +118,20 @@
             // importDDSToolStripMenuItem
             // 
             importDDSToolStripMenuItem.Name = "importDDSToolStripMenuItem";
-            importDDSToolStripMenuItem.Size = new Size(180, 22);
+            importDDSToolStripMenuItem.Size = new Size(144, 22);
             importDDSToolStripMenuItem.Text = "Import DDS...";
             importDDSToolStripMenuItem.Click += importDDSToolStripMenuItem_Click;
             // 
             // exportDDSToolStripMenuItem
             // 
             exportDDSToolStripMenuItem.Name = "exportDDSToolStripMenuItem";
-            exportDDSToolStripMenuItem.Size = new Size(180, 22);
+            exportDDSToolStripMenuItem.Size = new Size(144, 22);
             exportDDSToolStripMenuItem.Text = "Export DDS...";
             exportDDSToolStripMenuItem.Click += exportDDSToolStripMenuItem_Click;
             // 
             // statusStrip1
             // 
-            statusStrip1.Items.AddRange(new ToolStripItem[] { totalTexturesStatusLabel, totalTexturesStatus, toolStripStatusLabel1, statusFiltered });
+            statusStrip1.Items.AddRange(new ToolStripItem[] { totalTexturesStatusLabel, totalTexturesStatus, toolStripStatusLabel1, statusFiltered, progressBar });
             statusStrip1.Location = new Point(0, 652);
             statusStrip1.Name = "statusStrip1";
             statusStrip1.Size = new Size(886, 22);
@@ -139,7 +148,7 @@
             // 
             totalTexturesStatus.AutoSize = false;
             totalTexturesStatus.Name = "totalTexturesStatus";
-            totalTexturesStatus.Size = new Size(50, 17);
+            totalTexturesStatus.Size = new Size(60, 17);
             totalTexturesStatus.Text = "0";
             totalTexturesStatus.TextAlign = ContentAlignment.MiddleLeft;
             // 
@@ -156,6 +165,12 @@
             statusFiltered.Size = new Size(50, 17);
             statusFiltered.Text = "0";
             statusFiltered.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // progressBar
+            // 
+            progressBar.AutoSize = false;
+            progressBar.Name = "progressBar";
+            progressBar.Size = new Size(600, 16);
             // 
             // splitContainer1
             // 
@@ -277,6 +292,14 @@
             // 
             // panel5
             // 
+            panel5.Controls.Add(heightLabel);
+            panel5.Controls.Add(indexLabel);
+            panel5.Controls.Add(widthLabel);
+            panel5.Controls.Add(formatLabel);
+            panel5.Controls.Add(label6);
+            panel5.Controls.Add(label7);
+            panel5.Controls.Add(label8);
+            panel5.Controls.Add(label9);
             panel5.Controls.Add(textureFileLabel);
             panel5.Controls.Add(label5);
             panel5.Controls.Add(mipMapsLabel);
@@ -291,13 +314,50 @@
             panel5.Size = new Size(637, 72);
             panel5.TabIndex = 0;
             // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(483, 37);
+            label6.Name = "label6";
+            label6.Size = new Size(46, 15);
+            label6.TabIndex = 11;
+            label6.Text = "Height:";
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Location = new Point(490, 52);
+            label7.Name = "label7";
+            label7.Size = new Size(39, 15);
+            label7.TabIndex = 10;
+            label7.Text = "Index:";
+            // 
+            // label8
+            // 
+            label8.AutoSize = true;
+            label8.Location = new Point(487, 22);
+            label8.Name = "label8";
+            label8.Size = new Size(42, 15);
+            label8.TabIndex = 9;
+            label8.Text = "Width:";
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(481, 7);
+            label9.Name = "label9";
+            label9.Size = new Size(48, 15);
+            label9.TabIndex = 8;
+            label9.Text = "Format:";
+            // 
             // textureFileLabel
             // 
             textureFileLabel.AutoSize = true;
             textureFileLabel.Location = new Point(105, 37);
             textureFileLabel.Name = "textureFileLabel";
-            textureFileLabel.Size = new Size(0, 15);
+            textureFileLabel.Size = new Size(36, 15);
             textureFileLabel.TabIndex = 7;
+            textureFileLabel.Text = "None";
             // 
             // label5
             // 
@@ -313,8 +373,9 @@
             mipMapsLabel.AutoSize = true;
             mipMapsLabel.Location = new Point(105, 52);
             mipMapsLabel.Name = "mipMapsLabel";
-            mipMapsLabel.Size = new Size(0, 15);
+            mipMapsLabel.Size = new Size(36, 15);
             mipMapsLabel.TabIndex = 5;
+            mipMapsLabel.Text = "None";
             // 
             // label4
             // 
@@ -330,8 +391,9 @@
             textureNameLabel.AutoSize = true;
             textureNameLabel.Location = new Point(105, 22);
             textureNameLabel.Name = "textureNameLabel";
-            textureNameLabel.Size = new Size(0, 15);
+            textureNameLabel.Size = new Size(36, 15);
             textureNameLabel.TabIndex = 3;
+            textureNameLabel.Text = "None";
             // 
             // label3
             // 
@@ -347,8 +409,9 @@
             textureGuidLabel.AutoSize = true;
             textureGuidLabel.Location = new Point(105, 7);
             textureGuidLabel.Name = "textureGuidLabel";
-            textureGuidLabel.Size = new Size(0, 15);
+            textureGuidLabel.Size = new Size(36, 15);
             textureGuidLabel.TabIndex = 1;
+            textureGuidLabel.Text = "None";
             // 
             // label2
             // 
@@ -375,6 +438,42 @@
             texturesTree.Name = "texturesTree";
             texturesTree.Size = new Size(637, 250);
             texturesTree.TabIndex = 0;
+            // 
+            // heightLabel
+            // 
+            heightLabel.AutoSize = true;
+            heightLabel.Location = new Point(526, 37);
+            heightLabel.Name = "heightLabel";
+            heightLabel.Size = new Size(36, 15);
+            heightLabel.TabIndex = 15;
+            heightLabel.Text = "None";
+            // 
+            // indexLabel
+            // 
+            indexLabel.AutoSize = true;
+            indexLabel.Location = new Point(526, 52);
+            indexLabel.Name = "indexLabel";
+            indexLabel.Size = new Size(36, 15);
+            indexLabel.TabIndex = 14;
+            indexLabel.Text = "None";
+            // 
+            // widthLabel
+            // 
+            widthLabel.AutoSize = true;
+            widthLabel.Location = new Point(526, 22);
+            widthLabel.Name = "widthLabel";
+            widthLabel.Size = new Size(36, 15);
+            widthLabel.TabIndex = 13;
+            widthLabel.Text = "None";
+            // 
+            // formatLabel
+            // 
+            formatLabel.AutoSize = true;
+            formatLabel.Location = new Point(526, 7);
+            formatLabel.Name = "formatLabel";
+            formatLabel.Size = new Size(36, 15);
+            formatLabel.TabIndex = 12;
+            formatLabel.Text = "None";
             // 
             // MainForm
             // 
@@ -446,5 +545,14 @@
         private ToolStripMenuItem importDDSToolStripMenuItem;
         private ToolStripMenuItem exportDDSToolStripMenuItem;
         private Panel texturePanel;
+        private ToolStripProgressBar progressBar;
+        private Label label6;
+        private Label label7;
+        private Label label8;
+        private Label label9;
+        private Label heightLabel;
+        private Label indexLabel;
+        private Label widthLabel;
+        private Label formatLabel;
     }
 }
