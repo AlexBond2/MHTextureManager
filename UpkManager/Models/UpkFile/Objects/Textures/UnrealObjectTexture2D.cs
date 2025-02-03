@@ -187,6 +187,11 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
                             height = 128;
                             ddsFormat = FileFormat.DXT1;
                             break;
+                        case 0x2420:
+                            width = 136;
+                            height = 136;
+                            ddsFormat = FileFormat.DXT1;
+                            break;
                         case 0x2FD0:
                             width = 180;
                             height = 136;
