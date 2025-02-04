@@ -41,6 +41,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ModBackup\BACKUPS HERE.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\TFCLIst.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\TextureInfo.tsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
