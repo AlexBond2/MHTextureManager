@@ -23,7 +23,7 @@ namespace MHTextureManager
                     Entries[entry.Head.TextureGUID] = entry;
                 }
             }
-            
+
             // TODO replace to TextureInfo.bin
             string tfcPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextureInfo.tsv");
             if (File.Exists(tfcPath))
@@ -98,7 +98,7 @@ namespace MHTextureManager
         public TextureEntry(BinaryReader reader)
         {
             Head = new(reader);
-            Data = new(reader);
+            Data = new(this, reader);
         }
     }
 
@@ -126,17 +126,22 @@ namespace MHTextureManager
 
     public class TextureMipMap
     {
-        public TextureMipMaps Parent;
+        public TextureEntry Entry;
         public uint Index;
         public uint Offset;
         public uint Size;
 
-        public TextureMipMap(TextureMipMaps parent, BinaryReader reader)
+        public TextureMipMap(TextureEntry entry, BinaryReader reader)
         {
-            Parent = parent;
+            Entry = entry;
             Index = reader.ReadUInt32();
             Offset = reader.ReadUInt32();
             Size = reader.ReadUInt32();
+        }
+
+        public override string ToString()
+        {
+            return Index.ToString();
         }
     }
 
@@ -146,7 +151,7 @@ namespace MHTextureManager
         public UnrealMipMap OverrideMipMap;
         public List<TextureMipMap> Maps;
 
-        public TextureMipMaps(BinaryReader reader)
+        public TextureMipMaps(TextureEntry entry, BinaryReader reader)
         {
             OverrideMipMap = new();
             TextureFileName = TextureHead.ReadString(reader);
@@ -155,7 +160,7 @@ namespace MHTextureManager
 
             Maps = [];
             for (uint i = 0; i < num; i++)
-                Maps.Add(new(this, reader));
+                Maps.Add(new(entry, reader));
         }
     }
 }

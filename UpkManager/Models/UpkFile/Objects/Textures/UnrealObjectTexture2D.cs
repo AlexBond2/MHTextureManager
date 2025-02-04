@@ -117,7 +117,7 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
         {
             if (overrideMipMap.Width > 0)
             {
-                int shift = overrideMipMap.ImageData[0] - index;
+                int shift = index - overrideMipMap.ImageData[0];
                 if (shift < 0)
                 {
                     width = overrideMipMap.Width << -shift;
@@ -177,6 +177,11 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
                             height = 64;
                             ddsFormat = FileFormat.DXT1;
                             break;
+                        case 0x0FF0:
+                            width = 68;
+                            height = 60;
+                            ddsFormat = FileFormat.DXT5;
+                            break;
                         case 0x1000:
                             width = 64;
                             height = 64;
@@ -197,9 +202,19 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
                             height = 136;
                             ddsFormat = FileFormat.DXT1;
                             break;
+                        case 0x3200:
+                            width = 158;
+                            height = 158;
+                            ddsFormat = FileFormat.DXT1;
+                            break;
                         case 0x4000:
                             width = 128;
                             height = 128;
+                            ddsFormat = FileFormat.DXT5;
+                            break;
+                        case 0x5F00:
+                            width = 152;
+                            height = 160;
                             ddsFormat = FileFormat.DXT5;
                             break;
                         case 0x5FA0:
@@ -226,6 +241,11 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
                             width = 256;
                             height = 256;
                             ddsFormat = FileFormat.DXT5;
+                            break;
+                        case 0x17C00:
+                            width = 152;
+                            height = 160;
+                            ddsFormat = FileFormat.A8R8G8B8;
                             break;
                         case 0x1EC30:
                             width = 300;
@@ -366,7 +386,7 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
 
         public override Stream GetObjectStream()
         {
-            if (MipMaps == null || !MipMaps.Any()) return null;
+            if (MipMaps == null || MipMaps.Count == 0) return null;
 
             FileFormat format;
 
@@ -376,6 +396,28 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
                 .FirstOrDefault();
 
             return mipMap == null ? null : buildDdsImage(MipMaps.IndexOf(mipMap), out format);
+        }
+
+        public Stream GetMipMapsStream()
+        {
+            if (MipMaps == null || MipMaps.Count == 0) return null;
+
+            var orderedMipMaps = MipMaps.OrderByDescending(mip => mip.Width);
+
+            UnrealMipMap mipMap = orderedMipMaps.FirstOrDefault();
+
+            var ddsHeader = new DdsHeader(new DdsSaveConfig(mipMap.OverrideFormat, 0, 0, false, false), mipMap.Width, mipMap.Height, MipMaps.Count);
+            var stream = new MemoryStream();
+            var writer = new BinaryWriter(stream);
+
+            ddsHeader.Write(writer);
+            foreach (var map in orderedMipMaps)
+                stream.Write(map.ImageData, 0, map.ImageData.Length);
+
+            stream.Flush();
+            stream.Position = 0;
+
+            return stream;
         }
 
         public Stream GetObjectStream(int mipMapIndex)

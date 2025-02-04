@@ -52,10 +52,6 @@
             texturePanel = new Panel();
             textureView = new PictureBox();
             panel5 = new Panel();
-            label6 = new Label();
-            label7 = new Label();
-            label8 = new Label();
-            label9 = new Label();
             textureFileLabel = new Label();
             label5 = new Label();
             mipMapsLabel = new Label();
@@ -65,11 +61,16 @@
             textureGuidLabel = new Label();
             label2 = new Label();
             panel3 = new Panel();
-            texturesTree = new TreeView();
-            heightLabel = new Label();
-            indexLabel = new Label();
+            label11 = new Label();
+            sizeLabel = new Label();
+            label13 = new Label();
+            offsetLabel = new Label();
+            mipMapBox = new ComboBox();
+            label9 = new Label();
             widthLabel = new Label();
+            label8 = new Label();
             formatLabel = new Label();
+            mipMapLabel = new Label();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -90,7 +91,7 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, textureToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(886, 24);
+            menuStrip1.Size = new Size(1032, 24);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -134,7 +135,7 @@
             statusStrip1.Items.AddRange(new ToolStripItem[] { totalTexturesStatusLabel, totalTexturesStatus, toolStripStatusLabel1, statusFiltered, progressBar });
             statusStrip1.Location = new Point(0, 652);
             statusStrip1.Name = "statusStrip1";
-            statusStrip1.Size = new Size(886, 22);
+            statusStrip1.Size = new Size(1032, 22);
             statusStrip1.TabIndex = 1;
             statusStrip1.Text = "statusStrip1";
             // 
@@ -171,6 +172,7 @@
             progressBar.AutoSize = false;
             progressBar.Name = "progressBar";
             progressBar.Size = new Size(600, 16);
+            progressBar.Visible = false;
             // 
             // splitContainer1
             // 
@@ -182,15 +184,15 @@
             // 
             splitContainer1.Panel1.Controls.Add(panel2);
             splitContainer1.Panel1.Controls.Add(panel1);
-            splitContainer1.Panel1MinSize = 210;
+            splitContainer1.Panel1MinSize = 250;
             // 
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(panel4);
             splitContainer1.Panel2.Controls.Add(panel3);
-            splitContainer1.Panel2MinSize = 210;
-            splitContainer1.Size = new Size(886, 628);
-            splitContainer1.SplitterDistance = 245;
+            splitContainer1.Panel2MinSize = 400;
+            splitContainer1.Size = new Size(1032, 628);
+            splitContainer1.SplitterDistance = 285;
             splitContainer1.TabIndex = 2;
             // 
             // panel2
@@ -199,15 +201,16 @@
             panel2.Dock = DockStyle.Fill;
             panel2.Location = new Point(0, 32);
             panel2.Name = "panel2";
-            panel2.Size = new Size(245, 596);
+            panel2.Size = new Size(285, 596);
             panel2.TabIndex = 2;
             // 
             // manifestTreeView
             // 
+            manifestTreeView.BorderStyle = BorderStyle.FixedSingle;
             manifestTreeView.Dock = DockStyle.Fill;
             manifestTreeView.Location = new Point(0, 0);
             manifestTreeView.Name = "manifestTreeView";
-            manifestTreeView.Size = new Size(245, 596);
+            manifestTreeView.Size = new Size(285, 596);
             manifestTreeView.TabIndex = 0;
             manifestTreeView.AfterSelect += manifestTreeView_AfterSelect;
             // 
@@ -219,7 +222,7 @@
             panel1.Dock = DockStyle.Top;
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
-            panel1.Size = new Size(245, 32);
+            panel1.Size = new Size(285, 32);
             panel1.TabIndex = 1;
             // 
             // filterClear
@@ -231,7 +234,7 @@
             filterClear.Font = new Font("Segoe UI", 9F);
             filterClear.ForeColor = Color.White;
             filterClear.ImageAlign = ContentAlignment.MiddleLeft;
-            filterClear.Location = new Point(216, 3);
+            filterClear.Location = new Point(256, 4);
             filterClear.Name = "filterClear";
             filterClear.Size = new Size(24, 23);
             filterClear.TabIndex = 2;
@@ -242,7 +245,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(6, 6);
+            label1.Location = new Point(3, 7);
             label1.Name = "label1";
             label1.Size = new Size(33, 15);
             label1.TabIndex = 1;
@@ -251,9 +254,9 @@
             // filterBox
             // 
             filterBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            filterBox.Location = new Point(45, 3);
+            filterBox.Location = new Point(42, 4);
             filterBox.Name = "filterBox";
-            filterBox.Size = new Size(168, 23);
+            filterBox.Size = new Size(208, 23);
             filterBox.TabIndex = 0;
             filterBox.KeyDown += filterBox_KeyDown;
             // 
@@ -264,18 +267,19 @@
             panel4.Dock = DockStyle.Fill;
             panel4.Location = new Point(0, 0);
             panel4.Name = "panel4";
-            panel4.Size = new Size(637, 378);
+            panel4.Size = new Size(743, 583);
             panel4.TabIndex = 5;
             // 
             // texturePanel
             // 
             texturePanel.AutoScroll = true;
             texturePanel.BackColor = Color.Silver;
+            texturePanel.BorderStyle = BorderStyle.FixedSingle;
             texturePanel.Controls.Add(textureView);
             texturePanel.Dock = DockStyle.Fill;
             texturePanel.Location = new Point(0, 72);
             texturePanel.Name = "texturePanel";
-            texturePanel.Size = new Size(637, 306);
+            texturePanel.Size = new Size(743, 511);
             texturePanel.TabIndex = 2;
             texturePanel.Resize += texturePanel_Resize;
             // 
@@ -292,14 +296,6 @@
             // 
             // panel5
             // 
-            panel5.Controls.Add(heightLabel);
-            panel5.Controls.Add(indexLabel);
-            panel5.Controls.Add(widthLabel);
-            panel5.Controls.Add(formatLabel);
-            panel5.Controls.Add(label6);
-            panel5.Controls.Add(label7);
-            panel5.Controls.Add(label8);
-            panel5.Controls.Add(label9);
             panel5.Controls.Add(textureFileLabel);
             panel5.Controls.Add(label5);
             panel5.Controls.Add(mipMapsLabel);
@@ -311,44 +307,8 @@
             panel5.Dock = DockStyle.Top;
             panel5.Location = new Point(0, 0);
             panel5.Name = "panel5";
-            panel5.Size = new Size(637, 72);
+            panel5.Size = new Size(743, 72);
             panel5.TabIndex = 0;
-            // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Location = new Point(483, 37);
-            label6.Name = "label6";
-            label6.Size = new Size(46, 15);
-            label6.TabIndex = 11;
-            label6.Text = "Height:";
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Location = new Point(490, 52);
-            label7.Name = "label7";
-            label7.Size = new Size(39, 15);
-            label7.TabIndex = 10;
-            label7.Text = "Index:";
-            // 
-            // label8
-            // 
-            label8.AutoSize = true;
-            label8.Location = new Point(487, 22);
-            label8.Name = "label8";
-            label8.Size = new Size(42, 15);
-            label8.TabIndex = 9;
-            label8.Text = "Width:";
-            // 
-            // label9
-            // 
-            label9.AutoSize = true;
-            label9.Location = new Point(481, 7);
-            label9.Name = "label9";
-            label9.Size = new Size(48, 15);
-            label9.TabIndex = 8;
-            label9.Text = "Format:";
             // 
             // textureFileLabel
             // 
@@ -424,62 +384,119 @@
             // 
             // panel3
             // 
-            panel3.Controls.Add(texturesTree);
+            panel3.Controls.Add(label11);
+            panel3.Controls.Add(sizeLabel);
+            panel3.Controls.Add(label13);
+            panel3.Controls.Add(offsetLabel);
+            panel3.Controls.Add(mipMapBox);
+            panel3.Controls.Add(label9);
+            panel3.Controls.Add(widthLabel);
+            panel3.Controls.Add(label8);
+            panel3.Controls.Add(formatLabel);
+            panel3.Controls.Add(mipMapLabel);
             panel3.Dock = DockStyle.Bottom;
-            panel3.Location = new Point(0, 378);
+            panel3.Location = new Point(0, 583);
             panel3.Name = "panel3";
-            panel3.Size = new Size(637, 250);
+            panel3.Size = new Size(743, 45);
             panel3.TabIndex = 4;
             // 
-            // texturesTree
+            // label11
             // 
-            texturesTree.Dock = DockStyle.Fill;
-            texturesTree.Location = new Point(0, 0);
-            texturesTree.Name = "texturesTree";
-            texturesTree.Size = new Size(637, 250);
-            texturesTree.TabIndex = 0;
+            label11.AutoSize = true;
+            label11.Location = new Point(362, 7);
+            label11.Name = "label11";
+            label11.Size = new Size(67, 15);
+            label11.TabIndex = 17;
+            label11.Text = "Data offset:";
             // 
-            // heightLabel
+            // sizeLabel
             // 
-            heightLabel.AutoSize = true;
-            heightLabel.Location = new Point(526, 37);
-            heightLabel.Name = "heightLabel";
-            heightLabel.Size = new Size(36, 15);
-            heightLabel.TabIndex = 15;
-            heightLabel.Text = "None";
+            sizeLabel.AutoSize = true;
+            sizeLabel.Location = new Point(426, 22);
+            sizeLabel.Name = "sizeLabel";
+            sizeLabel.Size = new Size(36, 15);
+            sizeLabel.TabIndex = 21;
+            sizeLabel.Text = "None";
             // 
-            // indexLabel
+            // label13
             // 
-            indexLabel.AutoSize = true;
-            indexLabel.Location = new Point(526, 52);
-            indexLabel.Name = "indexLabel";
-            indexLabel.Size = new Size(36, 15);
-            indexLabel.TabIndex = 14;
-            indexLabel.Text = "None";
+            label13.AutoSize = true;
+            label13.Location = new Point(373, 22);
+            label13.Name = "label13";
+            label13.Size = new Size(56, 15);
+            label13.TabIndex = 18;
+            label13.Text = "Data size:";
+            // 
+            // offsetLabel
+            // 
+            offsetLabel.AutoSize = true;
+            offsetLabel.Location = new Point(426, 7);
+            offsetLabel.Name = "offsetLabel";
+            offsetLabel.Size = new Size(36, 15);
+            offsetLabel.TabIndex = 20;
+            offsetLabel.Text = "None";
+            // 
+            // mipMapBox
+            // 
+            mipMapBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            mipMapBox.FlatStyle = FlatStyle.Flat;
+            mipMapBox.FormattingEnabled = true;
+            mipMapBox.Location = new Point(73, 11);
+            mipMapBox.Name = "mipMapBox";
+            mipMapBox.Size = new Size(46, 23);
+            mipMapBox.TabIndex = 16;
+            mipMapBox.SelectedIndexChanged += mipMapBox_SelectedIndexChanged;
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(175, 22);
+            label9.Name = "label9";
+            label9.Size = new Size(48, 15);
+            label9.TabIndex = 8;
+            label9.Text = "Format:";
             // 
             // widthLabel
             // 
             widthLabel.AutoSize = true;
-            widthLabel.Location = new Point(526, 22);
+            widthLabel.Location = new Point(220, 7);
             widthLabel.Name = "widthLabel";
             widthLabel.Size = new Size(36, 15);
             widthLabel.TabIndex = 13;
             widthLabel.Text = "None";
             // 
+            // label8
+            // 
+            label8.AutoSize = true;
+            label8.Location = new Point(193, 7);
+            label8.Name = "label8";
+            label8.Size = new Size(30, 15);
+            label8.TabIndex = 9;
+            label8.Text = "Size:";
+            // 
             // formatLabel
             // 
             formatLabel.AutoSize = true;
-            formatLabel.Location = new Point(526, 7);
+            formatLabel.Location = new Point(220, 22);
             formatLabel.Name = "formatLabel";
             formatLabel.Size = new Size(36, 15);
             formatLabel.TabIndex = 12;
             formatLabel.Text = "None";
             // 
+            // mipMapLabel
+            // 
+            mipMapLabel.AutoSize = true;
+            mipMapLabel.Location = new Point(12, 14);
+            mipMapLabel.Name = "mipMapLabel";
+            mipMapLabel.Size = new Size(55, 15);
+            mipMapLabel.TabIndex = 10;
+            mipMapLabel.Text = "MipMap:";
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(886, 674);
+            ClientSize = new Size(1032, 674);
             Controls.Add(splitContainer1);
             Controls.Add(statusStrip1);
             Controls.Add(menuStrip1);
@@ -507,6 +524,7 @@
             panel5.ResumeLayout(false);
             panel5.PerformLayout();
             panel3.ResumeLayout(false);
+            panel3.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -526,7 +544,6 @@
         private PictureBox textureView;
         private Panel panel5;
         private Button filterClear;
-        private TreeView texturesTree;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem openToolStripMenuItem;
         private Label textureGuidLabel;
@@ -546,13 +563,17 @@
         private ToolStripMenuItem exportDDSToolStripMenuItem;
         private Panel texturePanel;
         private ToolStripProgressBar progressBar;
-        private Label label6;
-        private Label label7;
+        private Label mipMapLabel;
         private Label label8;
         private Label label9;
-        private Label heightLabel;
-        private Label indexLabel;
         private Label widthLabel;
         private Label formatLabel;
+        private ComboBox mipMapBox;
+        private Label label7;
+        private Label label10;
+        private Label label11;
+        private Label sizeLabel;
+        private Label label13;
+        private Label offsetLabel;
     }
 }

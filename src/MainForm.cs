@@ -67,7 +67,6 @@ namespace MHTextureManager
             }
         }
 
-        
         private void CheckAllTextures(List<TextureEntry> entries)
         {
             string notfound = "NotFound.tsv";
@@ -114,7 +113,7 @@ namespace MHTextureManager
         private void AddToFile(string message, string filePath)
         {
             using var writer = new StreamWriter(filePath, true);
-            writer.WriteLine(message);            
+            writer.WriteLine(message);
         }
 
         private void BuildTree(List<TextureEntry> entries)
@@ -216,19 +215,19 @@ namespace MHTextureManager
                 mipMapsLabel.Text = entry.Data.Maps.Count.ToString();
                 textureFileLabel.Text = entry.Data.TextureFileName;
 
-                UpdateTexturesTree(entry);
+                UpdateMipMapBox(entry);
                 LoadTextureCache(entry);
             }
         }
 
-        private void LoadTextureCache(TextureEntry entry)
+        private void LoadTextureCache(TextureEntry entry, int index = 0)
         {
             string tfcPath = Path.Combine(ManifestPath, entry.Data.TextureFileName + ".tfc");
             if (entry.Data.Maps.Count == 0) return;
             if (textureCache.LoadFromFile(tfcPath, entry) && textureCache.Texture2D.MipMaps.Count > 0)
             {
-                UpdateTextureInfo((int)entry.Data.Maps[0].Index);
-                var stream = textureCache.Texture2D.GetObjectStream(0);
+                UpdateTextureInfo(index);
+                var stream = textureCache.Texture2D.GetObjectStream(index);
                 ddsFile.Load(stream);
                 textureView.Image = BitmapSourceToBitmap(ddsFile.BitmapSource);
                 CenterTexture();
@@ -237,43 +236,36 @@ namespace MHTextureManager
                                  "Error load", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        private void UpdateTextureInfo(int index)
+        private void UpdateTextureInfo(int mipmapIndex)
         {
-            var mipMap = textureCache.Texture2D.MipMaps[0];
+            var mipMap = textureCache.Texture2D.MipMaps[mipmapIndex];
             formatLabel.Text = mipMap.OverrideFormat.ToString();
-            widthLabel.Text = mipMap.Width.ToString();
-            heightLabel.Text = mipMap.Height.ToString();
-            indexLabel.Text = index.ToString();
+            widthLabel.Text = $"{mipMap.Width} x {mipMap.Height}";
+            mipMapBox.SelectedIndex = mipmapIndex;
+        }
+        public class ComboBoxItem
+        {
+            public string Text { get; set; }
+            public object Tag { get; set; }
+
+            public ComboBoxItem() { }
+
+            public override string ToString()
+            {
+                return Text ?? ""; 
+            }
         }
 
-        private void UpdateTexturesTree(TextureEntry entry)
+        private void UpdateMipMapBox(TextureEntry entry)
         {
-            texturesTree.BeginUpdate();
-            texturesTree.Nodes.Clear();
-
-            var rootNode = new TreeNode(entry.Data.TextureFileName);
+            mipMapBox.Items.Clear();
 
             foreach (var mipMap in entry.Data.Maps)
-            {
-                var mipNode = new TreeNode($"MipMap[{mipMap.Index}]") { Tag = mipMap };
-
-                var offsetNode = new TreeNode($"Offset = {mipMap.Offset}");
-                var sizeNode = new TreeNode($"Size = {mipMap.Size}");
-
-                mipNode.Nodes.Add(offsetNode);
-                mipNode.Nodes.Add(sizeNode);
-
-                rootNode.Nodes.Add(mipNode);
-            }
-
-            texturesTree.Nodes.Add(rootNode);
-            texturesTree.ExpandAll();
-            texturesTree.EndUpdate();
+                mipMapBox.Items.Add(mipMap);
         }
 
         private void importDDSToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
                 openFileDialog.Filter = "DDS Files (*.dds)|*.dds";
@@ -285,7 +277,6 @@ namespace MHTextureManager
                     ImportDds(filename);
                 }
             }
-
         }
 
         private void ImportDds(string filename)
@@ -340,13 +331,33 @@ namespace MHTextureManager
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     string filename = saveFileDialog.FileName;
-                    var stream = textureCache.Texture2D.GetObjectStream(0);
+
+                    if (textureCache.Loaded == false)
+                    {
+                        var entry = textureCache.Entry;
+                        string tfcPath = Path.Combine(ManifestPath, entry.Data.TextureFileName + ".tfc");
+                        textureCache.LoadFromFile(tfcPath, entry);
+                    }
+                    var stream = textureCache.Texture2D.GetMipMapsStream();
                     if (stream == null) return;
 
                     using var fileStream = new FileStream(filename, FileMode.Create, FileAccess.Write);
                     stream.Seek(0, SeekOrigin.Begin);
                     stream.CopyTo(fileStream);
                 }
+            }
+        }
+
+        private void mipMapBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (mipMapBox.SelectedItem is TextureMipMap mipMap)
+            {
+                var entry = mipMap.Entry;
+                offsetLabel.Text = mipMap.Offset.ToString();
+                sizeLabel.Text = mipMap.Size.ToString();
+
+                int index = entry.Data.Maps.IndexOf(mipMap);
+                LoadTextureCache(mipMap.Entry, index);
             }
         }
     }

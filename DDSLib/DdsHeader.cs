@@ -12,7 +12,7 @@ namespace DDSLib
 
         internal DdsHeader() { }
 
-        public DdsHeader(DdsSaveConfig config, int width, int height)
+        public DdsHeader(DdsSaveConfig config, int width, int height, int mipMaps = 1)
         {
             PixelFormat = new DdsPixelFormat(config.FileFormat);
 
@@ -22,7 +22,7 @@ namespace DDSLib
             //
             // Compute mip map count..
             //
-            int mipCount = config.GenerateMipMaps ? CountMipMaps(width, height) : 1;
+            int mipCount = config.GenerateMipMaps ? CountMipMaps(width, height) : mipMaps;
 
             Size = 18 * 4 + PixelFormat.Size + 5 * 4;
 
