@@ -9,8 +9,11 @@ namespace MHTextureManager
         private List<TreeNode> rootNodes;
         private DdsFile ddsFile;
         private TextureFileCache textureCache;
+        private SettingsForm settingsForm;
+        private HashSet<string> standardList;
 
-        public string ManifestPath;
+        public const string ManifestName = "TextureFileCacheManifest.bin";
+        public string ManifestPath = "";
 
         public MainForm()
         {
@@ -18,59 +21,66 @@ namespace MHTextureManager
             manifest = new();
             rootNodes = new();
             textureCache = new();
+            settingsForm = new();
+            standardList = new();
+
             InitializeComponent();
+
+            string tfclist = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TFCLIst.txt");
+            if (File.Exists(tfclist))
+                foreach (string line in File.ReadLines(tfclist))
+                    standardList.Add(line.Trim());
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            using var openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Texture Manifest (*.bin)|" + ManifestName;
+            openFileDialog.Title = "Select " + ManifestName;
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                openFileDialog.Filter = "Texture Manifest (*.bin)|TextureFileCacheManifest.bin";
-                openFileDialog.Title = "Select TextureFileCacheManifest.bin";
+                string selectedFile = Path.GetFileName(openFileDialog.FileName);
 
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                if (selectedFile != ManifestName)
                 {
-                    string selectedFile = Path.GetFileName(openFileDialog.FileName);
-
-                    if (selectedFile != "TextureFileCacheManifest.bin")
-                    {
-                        MessageBox.Show("Please select the correct file: TextureFileCacheManifest.bin",
-                                        "Invalid File", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-
-                    string filePath = openFileDialog.FileName;
-                    ManifestPath = Path.GetDirectoryName(filePath) ?? "";
-
-                    manifestTreeView.Nodes.Clear();
-
-                    Task.Run(() =>
-                    {
-                        var entries = manifest.LoadManifestFromFile(filePath);
-                        // CheckAllTextures(entries);
-                        int totalEntries = entries.Count;
-
-                        Invoke(new Action(() => totalTexturesStatus.Text = totalEntries.ToString()));
-
-                        BuildTree(entries);
-
-                        BeginInvoke(new Action(() =>
-                        {
-                            manifestTreeView.BeginUpdate();
-                            manifestTreeView.Nodes.AddRange([.. rootNodes]);
-                            manifestTreeView.EndUpdate();
-
-                            statusFiltered.Text = manifestTreeView.Nodes.Count.ToString();
-                        }));
-                    });
+                    MessageBox.Show("Please select the correct file: " + ManifestName,
+                                    "Invalid File", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
                 }
+
+                string filePath = openFileDialog.FileName;
+                ManifestPath = Path.GetDirectoryName(filePath) ?? "";
+
+                manifestTreeView.Nodes.Clear();
+
+                Task.Run(() =>
+                {
+                    var entries = manifest.LoadManifest(filePath);
+                    // CheckAllTextures(entries);
+                    int totalEntries = entries.Count;
+
+                    Invoke(new Action(() => totalTexturesStatus.Text = totalEntries.ToString()));
+
+                    BuildTree(entries);
+
+                    BeginInvoke(new Action(() =>
+                    {
+                        manifestTreeView.BeginUpdate();
+                        manifestTreeView.Nodes.AddRange([.. rootNodes]);
+                        manifestTreeView.EndUpdate();
+
+                        statusFiltered.Text = manifestTreeView.Nodes.Count.ToString();
+                        saveManifestToolStripMenuItem.Enabled = true;
+                    }));
+                });
             }
         }
 
         private void CheckAllTextures(List<TextureEntry> entries)
         {
-            string notfound = "NotFound.tsv";
-            string found = "FoundInfo.tsv";
+            //string notfound = "NotFound.tsv";
+            //string found = "FoundInfo.tsv";
             string notLoad = "NotLoad.tsv";
 
             Invoke(new Action(() => progressBar.Maximum = entries.Count));
@@ -100,7 +110,7 @@ namespace MHTextureManager
                         }*/
                     }
                     else
-                        AddToFile($"{entry.Head.TextureName}\t{entry.Head.TextureGUID}\t{index}\t{mipmap.Width}\t{mipmap.Height}\t{mipmap.OverrideFormat}", notLoad);
+                        AddToFile($"{entry.Head.TextureName}\t{entry.Head.TextureGuid}\t{index}\t{mipmap.Width}\t{mipmap.Height}\t{mipmap.OverrideFormat}", notLoad);
                 }/*
                 else
                 {
@@ -211,7 +221,7 @@ namespace MHTextureManager
             if (e.Node?.Tag is TextureEntry entry)
             {
                 textureNameLabel.Text = entry.Head.TextureName;
-                textureGuidLabel.Text = entry.Head.TextureGUID.ToString();
+                textureGuidLabel.Text = entry.Head.TextureGuid.ToString();
                 mipMapsLabel.Text = entry.Data.Maps.Count.ToString();
                 textureFileLabel.Text = entry.Data.TextureFileName;
 
@@ -231,6 +241,9 @@ namespace MHTextureManager
                 ddsFile.Load(stream);
                 textureView.Image = BitmapSourceToBitmap(ddsFile.BitmapSource);
                 CenterTexture();
+
+                importDDSToolStripMenuItem.Enabled = true;
+                exportDDSToolStripMenuItem.Enabled = true;
             }
             else MessageBox.Show($"Can't Load TFC: {entry.Head.TextureName}\nFile: {tfcPath}",
                                  "Error load", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -243,18 +256,6 @@ namespace MHTextureManager
             widthLabel.Text = $"{mipMap.Width} x {mipMap.Height}";
             mipMapBox.SelectedIndex = mipmapIndex;
         }
-        public class ComboBoxItem
-        {
-            public string Text { get; set; }
-            public object Tag { get; set; }
-
-            public ComboBoxItem() { }
-
-            public override string ToString()
-            {
-                return Text ?? ""; 
-            }
-        }
 
         private void UpdateMipMapBox(TextureEntry entry)
         {
@@ -266,25 +267,38 @@ namespace MHTextureManager
 
         private void importDDSToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
-            {
-                openFileDialog.Filter = "DDS Files (*.dds)|*.dds";
-                openFileDialog.Title = "Select a DDS File";
+            using var openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "DDS Files (*.dds)|*.dds";
+            openFileDialog.Title = "Select a DDS File";
 
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    string filename = openFileDialog.FileName;
-                    ImportDds(filename);
-                }
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string filename = openFileDialog.FileName;
+                ImportDds(filename);
             }
         }
 
         private void ImportDds(string filename)
         {
-            ddsFile = new DdsFile(filename);
-            textureView.Image = BitmapSourceToBitmap(ddsFile.BitmapSource);
-            CenterTexture();
-            MessageBox.Show("Import not ready!", "TODO", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            var textureFileName = textureCache.Entry.Data.TextureFileName;
+            settingsForm.TextureCacheName = textureFileName;
+            settingsForm.TextureCachePath = ManifestPath;
+
+            bool canChange = IsStandardCache(textureFileName);
+            settingsForm.CanChanged = canChange;
+
+            if (settingsForm.ShowDialog() == DialogResult.OK)
+            {
+                ddsFile = new DdsFile(filename);
+                textureView.Image = BitmapSourceToBitmap(ddsFile.BitmapSource);
+                CenterTexture();
+                MessageBox.Show("Import not ready!", "TODO", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private bool IsStandardCache(string textureFileName)
+        {
+            return standardList.Contains(textureFileName);
         }
 
         private static Bitmap BitmapSourceToBitmap(BitmapSource bitmapSource)
@@ -322,29 +336,27 @@ namespace MHTextureManager
         {
             if (textureCache.Texture2D.MipMaps.Count == 0) return;
 
-            using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+            using var saveFileDialog = new SaveFileDialog();
+            saveFileDialog.FileName = textureNameLabel.Text + ".dds";
+            saveFileDialog.Filter = "DDS Files (*.dds)|*.dds";
+            saveFileDialog.Title = "Save a DDS File";
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
-                saveFileDialog.FileName = textureNameLabel.Text + ".dds";
-                saveFileDialog.Filter = "DDS Files (*.dds)|*.dds";
-                saveFileDialog.Title = "Save a DDS File";
+                string filename = saveFileDialog.FileName;
 
-                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                if (textureCache.Loaded == false)
                 {
-                    string filename = saveFileDialog.FileName;
-
-                    if (textureCache.Loaded == false)
-                    {
-                        var entry = textureCache.Entry;
-                        string tfcPath = Path.Combine(ManifestPath, entry.Data.TextureFileName + ".tfc");
-                        textureCache.LoadFromFile(tfcPath, entry);
-                    }
-                    var stream = textureCache.Texture2D.GetMipMapsStream();
-                    if (stream == null) return;
-
-                    using var fileStream = new FileStream(filename, FileMode.Create, FileAccess.Write);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    stream.CopyTo(fileStream);
+                    var entry = textureCache.Entry;
+                    string tfcPath = Path.Combine(ManifestPath, entry.Data.TextureFileName + ".tfc");
+                    textureCache.LoadFromFile(tfcPath, entry);
                 }
+                var stream = textureCache.Texture2D.GetMipMapsStream();
+                if (stream == null) return;
+
+                using var fileStream = new FileStream(filename, FileMode.Create, FileAccess.Write);
+                stream.Seek(0, SeekOrigin.Begin);
+                stream.CopyTo(fileStream);
             }
         }
 
@@ -359,6 +371,18 @@ namespace MHTextureManager
                 int index = entry.Data.Maps.IndexOf(mipMap);
                 LoadTextureCache(mipMap.Entry, index);
             }
+        }
+
+        private void saveManifestToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using var saveFileDialog = new SaveFileDialog();
+            saveFileDialog.InitialDirectory = ManifestPath;
+            saveFileDialog.FileName = ManifestName;
+            saveFileDialog.Filter = "Texture Manifest (*.bin)|" + ManifestName;
+            saveFileDialog.Title = "Save " + ManifestName;
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                manifest.SaveManifest(saveFileDialog.FileName);
         }
     }
 }

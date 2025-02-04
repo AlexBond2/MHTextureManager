@@ -32,6 +32,7 @@
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             openToolStripMenuItem = new ToolStripMenuItem();
+            saveManifestToolStripMenuItem = new ToolStripMenuItem();
             textureToolStripMenuItem = new ToolStripMenuItem();
             importDDSToolStripMenuItem = new ToolStripMenuItem();
             exportDDSToolStripMenuItem = new ToolStripMenuItem();
@@ -97,7 +98,7 @@
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, saveManifestToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(65, 20);
             fileToolStripMenuItem.Text = "Manifest";
@@ -105,9 +106,17 @@
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(161, 22);
+            openToolStripMenuItem.Size = new Size(180, 22);
             openToolStripMenuItem.Text = "Open Manifest...";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
+            // 
+            // saveManifestToolStripMenuItem
+            // 
+            saveManifestToolStripMenuItem.Enabled = false;
+            saveManifestToolStripMenuItem.Name = "saveManifestToolStripMenuItem";
+            saveManifestToolStripMenuItem.Size = new Size(180, 22);
+            saveManifestToolStripMenuItem.Text = "Save Manifest...";
+            saveManifestToolStripMenuItem.Click += saveManifestToolStripMenuItem_Click;
             // 
             // textureToolStripMenuItem
             // 
@@ -118,6 +127,7 @@
             // 
             // importDDSToolStripMenuItem
             // 
+            importDDSToolStripMenuItem.Enabled = false;
             importDDSToolStripMenuItem.Name = "importDDSToolStripMenuItem";
             importDDSToolStripMenuItem.Size = new Size(144, 22);
             importDDSToolStripMenuItem.Text = "Import DDS...";
@@ -125,6 +135,7 @@
             // 
             // exportDDSToolStripMenuItem
             // 
+            exportDDSToolStripMenuItem.Enabled = false;
             exportDDSToolStripMenuItem.Name = "exportDDSToolStripMenuItem";
             exportDDSToolStripMenuItem.Size = new Size(144, 22);
             exportDDSToolStripMenuItem.Text = "Export DDS...";
@@ -569,11 +580,11 @@
         private Label widthLabel;
         private Label formatLabel;
         private ComboBox mipMapBox;
-        private Label label7;
         private Label label10;
         private Label label11;
         private Label sizeLabel;
         private Label label13;
         private Label offsetLabel;
+        private ToolStripMenuItem saveManifestToolStripMenuItem;
     }
 }

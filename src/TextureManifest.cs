@@ -7,9 +7,9 @@ namespace MHTextureManager
 
     public class TextureManifest
     {
-        public Dictionary<Guid, TextureEntry> Entries { get; private set; } = [];
+        public SortedDictionary<TextureHead, TextureEntry> Entries { get; private set; } = [];
 
-        public List<TextureEntry> LoadManifestFromFile(string filePath)
+        public List<TextureEntry> LoadManifest(string filePath)
         {
             Entries.Clear();
 
@@ -19,8 +19,8 @@ namespace MHTextureManager
 
                 for (uint i = 0; i < size; i++)
                 {
-                    var entry = new TextureEntry(reader);
-                    Entries[entry.Head.TextureGUID] = entry;
+                    var entry = new TextureEntry(reader, i);
+                    Entries.Add(entry.Head, entry);
                 }
             }
 
@@ -36,6 +36,8 @@ namespace MHTextureManager
         {
             using var sr = new StreamReader(tfcFilePath);
             string? headerLine = sr.ReadLine();
+
+            var guidIndex = Entries.Keys.ToLookup(key => key.TextureGuid);
 
             while (!sr.EndOfStream)
             {
@@ -59,17 +61,22 @@ namespace MHTextureManager
                 if (!int.TryParse(heightStr, out int height)) continue;
                 if (!FileFormat.TryParse(formatStr, out FileFormat overrideFormat)) continue;
 
-                if (!Entries.TryGetValue(guid, out TextureEntry entry))
+                var keysToUpdate = guidIndex[guid].ToList();
+
+                if (keysToUpdate.Count == 0)
                 {
                     Log($"Not found: {guid}");
+                    return;
                 }
-                else
-                {
-                    entry.Data.OverrideMipMap.Width = width;
-                    entry.Data.OverrideMipMap.Height = height;
-                    entry.Data.OverrideMipMap.OverrideFormat = overrideFormat;
-                    entry.Data.OverrideMipMap.ImageData = [(byte)index];
-                }
+
+                foreach (var key in keysToUpdate)
+                    if (Entries.TryGetValue(key, out var entry))
+                    {
+                        entry.Data.OverrideMipMap.Width = width;
+                        entry.Data.OverrideMipMap.Height = height;
+                        entry.Data.OverrideMipMap.OverrideFormat = overrideFormat;
+                        entry.Data.OverrideMipMap.ImageData = [(byte)index];
+                    }
             }
         }
 
@@ -88,6 +95,15 @@ namespace MHTextureManager
             }
         }
 
+        public void SaveManifest(string filePath)
+        {
+            using var writer = new BinaryWriter(File.Open(filePath, FileMode.Create, FileAccess.Write));
+            uint size = (uint)Entries.Count;
+            writer.Write(size);
+
+            foreach (var entry in Entries.Values)
+                entry.Write(writer);
+        }
     }
 
     public class TextureEntry
@@ -95,22 +111,50 @@ namespace MHTextureManager
         public TextureHead Head;
         public TextureMipMaps Data;
 
-        public TextureEntry(BinaryReader reader)
+        public TextureEntry(BinaryReader reader, uint index)
         {
-            Head = new(reader);
+            Head = new(reader, index);
             Data = new(this, reader);
+        }
+
+        public void Write(BinaryWriter writer)
+        {
+            Head.Write(writer);
+            Data.Write(writer);
         }
     }
 
-    public class TextureHead
+    public struct TextureHead : IComparable<TextureHead> 
     {
         public string TextureName;
-        public Guid TextureGUID;
+        public Guid TextureGuid;
+        public uint HashIndex; // use HashIndex without the hash function
 
-        public TextureHead(BinaryReader reader)
+        public TextureHead(BinaryReader reader, uint index)
         {
+            HashIndex = index;
             TextureName = ReadString(reader);
-            TextureGUID = new Guid(reader.ReadBytes(16));
+            TextureGuid = new Guid(reader.ReadBytes(16));
+        }
+
+        public override int GetHashCode()
+        {
+            // TODO Hash function https://github.com/stephank/surreal/blob/master/Core/Inc/UnFile.h#L331C14
+            return TextureName?.GetHashCode() ?? 0;
+        }
+
+        public int CompareTo(TextureHead other)
+        {
+            return HashIndex.CompareTo(other.HashIndex);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+                return false;
+
+            TextureHead other = (TextureHead)obj;
+            return HashIndex == other.HashIndex;
         }
 
         public static string ReadString(BinaryReader reader)
@@ -121,6 +165,19 @@ namespace MHTextureManager
             if (nullIndex >= 0)
                 stringBytes = stringBytes[..nullIndex];
             return Encoding.UTF8.GetString(stringBytes);
+        }
+
+        public void Write(BinaryWriter writer)
+        {
+            WriteString(writer, TextureName);
+            writer.Write(TextureGuid.ToByteArray());
+        }
+
+        public static void WriteString(BinaryWriter writer, string value)
+        {
+            byte[] stringBytes = Encoding.UTF8.GetBytes(value + '\0');
+            writer.Write((uint)stringBytes.Length);
+            writer.Write(stringBytes);
         }
     }
 
@@ -143,6 +200,13 @@ namespace MHTextureManager
         {
             return Index.ToString();
         }
+
+        public void Write(BinaryWriter writer)
+        {
+            writer.Write(Index);
+            writer.Write(Offset);
+            writer.Write(Size);
+        }
     }
 
     public class TextureMipMaps
@@ -161,6 +225,17 @@ namespace MHTextureManager
             Maps = [];
             for (uint i = 0; i < num; i++)
                 Maps.Add(new(entry, reader));
+        }
+
+        public void Write(BinaryWriter writer)
+        {
+            TextureHead.WriteString(writer, TextureFileName);
+
+            uint num = (uint)Maps.Count;
+            writer.Write(num);
+
+            foreach (var map in Maps)
+                map.Write(writer);
         }
     }
 }
