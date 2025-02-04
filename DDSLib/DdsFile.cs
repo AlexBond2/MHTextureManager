@@ -84,7 +84,7 @@ namespace DDSLib
 
         public void Load(Stream input)
         {
-            BinaryReader reader = new BinaryReader(input);
+            using var reader = new BinaryReader(input);
             //
             // Read the DDS tag. If it's not right, then bail..
             //
@@ -97,6 +97,7 @@ namespace DDSLib
             // Read everything in.. for now assume it worked like a charm..
             //
             header.Read(reader);
+            MipMaps = [];
 
             if ((header.PixelFormat.Flags & (int)PixelFormatFlags.FourCC) != 0)
             {
@@ -128,21 +129,8 @@ namespace DDSLib
                             throw new FormatException("File is not a supported DDS format");
                         }
                 }
-                //
-                // Compute size of compressed block area
-                //
-                int blockCount = (Width + 3) / 4 * ((Height + 3) / 4);
-                int blockSize = (squishFlags & SquishFlags.Dxt1) != 0 ? 8 : 16;
-                //
-                // Allocate room for compressed blocks, and read data into it.
-                //
-                byte[] compressedBlocks = new byte[blockCount * blockSize];
 
-                input.Read(compressedBlocks, 0, compressedBlocks.GetLength(0));
-                //
-                // Now decompress..
-                //
-                largestMipMap = DdsSquish.DecompressImage(Width, Height, compressedBlocks, squishFlags, null);
+                ReadCompressedMipMaps(input, squishFlags);
             }
             else
             {
@@ -150,235 +138,302 @@ namespace DDSLib
                 // We can only deal with the non-DXT formats we know about..  this is a bit of a mess..
                 // Sorry..
                 //
-                FileFormat fileFormat = FileFormat.Unknown;
+                var fileFormat = FileFormat.Unknown;
+                var pixelFormat = header.PixelFormat;
 
-                if ((header.PixelFormat.Flags == (int)PixelFormatFlags.RGBA) && (header.PixelFormat.RgbBitCount == 32) &&
-                    (header.PixelFormat.RBitMask == 0x00ff0000) && (header.PixelFormat.GBitMask == 0x0000ff00) &&
-                    (header.PixelFormat.BBitMask == 0x000000ff) && (header.PixelFormat.ABitMask == 0xff000000)) fileFormat = FileFormat.A8R8G8B8;
-                else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.RGB) && (header.PixelFormat.RgbBitCount == 32) &&
-                         (header.PixelFormat.RBitMask == 0x00ff0000) && (header.PixelFormat.GBitMask == 0x0000ff00) &&
-                         (header.PixelFormat.BBitMask == 0x000000ff) && (header.PixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.X8R8G8B8;
-                else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.RGBA) && (header.PixelFormat.RgbBitCount == 32) &&
-                         (header.PixelFormat.RBitMask == 0x000000ff) && (header.PixelFormat.GBitMask == 0x0000ff00) &&
-                         (header.PixelFormat.BBitMask == 0x00ff0000) && (header.PixelFormat.ABitMask == 0xff000000)) fileFormat = FileFormat.A8B8G8R8;
-                else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.RGB) && (header.PixelFormat.RgbBitCount == 32) &&
-                         (header.PixelFormat.RBitMask == 0x000000ff) && (header.PixelFormat.GBitMask == 0x0000ff00) &&
-                         (header.PixelFormat.BBitMask == 0x00ff0000) && (header.PixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.X8B8G8R8;
-                else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.RGBA) && (header.PixelFormat.RgbBitCount == 16) &&
-                         (header.PixelFormat.RBitMask == 0x00007c00) && (header.PixelFormat.GBitMask == 0x000003e0) &&
-                         (header.PixelFormat.BBitMask == 0x0000001f) && (header.PixelFormat.ABitMask == 0x00008000)) fileFormat = FileFormat.A1R5G5B5;
-                else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.RGBA) && (header.PixelFormat.RgbBitCount == 16) &&
-                         (header.PixelFormat.RBitMask == 0x00000f00) && (header.PixelFormat.GBitMask == 0x000000f0) &&
-                         (header.PixelFormat.BBitMask == 0x0000000f) && (header.PixelFormat.ABitMask == 0x0000f000)) fileFormat = FileFormat.A4R4G4B4;
-                else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.RGB) && (header.PixelFormat.RgbBitCount == 24) &&
-                         (header.PixelFormat.RBitMask == 0x00ff0000) && (header.PixelFormat.GBitMask == 0x0000ff00) &&
-                         (header.PixelFormat.BBitMask == 0x000000ff) && (header.PixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.R8G8B8;
-                else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.RGB) && (header.PixelFormat.RgbBitCount == 16) &&
-                         (header.PixelFormat.RBitMask == 0x0000f800) && (header.PixelFormat.GBitMask == 0x000007e0) &&
-                         (header.PixelFormat.BBitMask == 0x0000001f) && (header.PixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.R5G6B5;
-                else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.Gray) && (header.PixelFormat.RgbBitCount == 8) &&
-                         (header.PixelFormat.RBitMask == 0x000000ff) && (header.PixelFormat.GBitMask == 0x00000000) &&
-                         (header.PixelFormat.BBitMask == 0x00000000) && (header.PixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.G8;
-                else if ((header.PixelFormat.Flags == (int)PixelFormatFlags.VU) && (header.PixelFormat.RgbBitCount == 16) &&
-                         (header.PixelFormat.RBitMask == 0x000000ff) && (header.PixelFormat.GBitMask == 0x0000ff00) &&
-                         (header.PixelFormat.BBitMask == 0x00000000) && (header.PixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.V8U8;
+                if ((pixelFormat.Flags == (int)PixelFormatFlags.RGBA) && (pixelFormat.RgbBitCount == 32) &&
+                    (pixelFormat.RBitMask == 0x00ff0000) && (pixelFormat.GBitMask == 0x0000ff00) &&
+                    (pixelFormat.BBitMask == 0x000000ff) && (pixelFormat.ABitMask == 0xff000000)) fileFormat = FileFormat.A8R8G8B8;
+                else if ((pixelFormat.Flags == (int)PixelFormatFlags.RGB) && (pixelFormat.RgbBitCount == 32) &&
+                         (pixelFormat.RBitMask == 0x00ff0000) && (pixelFormat.GBitMask == 0x0000ff00) &&
+                         (pixelFormat.BBitMask == 0x000000ff) && (pixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.X8R8G8B8;
+                else if ((pixelFormat.Flags == (int)PixelFormatFlags.RGBA) && (pixelFormat.RgbBitCount == 32) &&
+                         (pixelFormat.RBitMask == 0x000000ff) && (pixelFormat.GBitMask == 0x0000ff00) &&
+                         (pixelFormat.BBitMask == 0x00ff0000) && (pixelFormat.ABitMask == 0xff000000)) fileFormat = FileFormat.A8B8G8R8;
+                else if ((pixelFormat.Flags == (int)PixelFormatFlags.RGB) && (pixelFormat.RgbBitCount == 32) &&
+                         (pixelFormat.RBitMask == 0x000000ff) && (pixelFormat.GBitMask == 0x0000ff00) &&
+                         (pixelFormat.BBitMask == 0x00ff0000) && (pixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.X8B8G8R8;
+                else if ((pixelFormat.Flags == (int)PixelFormatFlags.RGBA) && (pixelFormat.RgbBitCount == 16) &&
+                         (pixelFormat.RBitMask == 0x00007c00) && (pixelFormat.GBitMask == 0x000003e0) &&
+                         (pixelFormat.BBitMask == 0x0000001f) && (pixelFormat.ABitMask == 0x00008000)) fileFormat = FileFormat.A1R5G5B5;
+                else if ((pixelFormat.Flags == (int)PixelFormatFlags.RGBA) && (pixelFormat.RgbBitCount == 16) &&
+                         (pixelFormat.RBitMask == 0x00000f00) && (pixelFormat.GBitMask == 0x000000f0) &&
+                         (pixelFormat.BBitMask == 0x0000000f) && (pixelFormat.ABitMask == 0x0000f000)) fileFormat = FileFormat.A4R4G4B4;
+                else if ((pixelFormat.Flags == (int)PixelFormatFlags.RGB) && (pixelFormat.RgbBitCount == 24) &&
+                         (pixelFormat.RBitMask == 0x00ff0000) && (pixelFormat.GBitMask == 0x0000ff00) &&
+                         (pixelFormat.BBitMask == 0x000000ff) && (pixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.R8G8B8;
+                else if ((pixelFormat.Flags == (int)PixelFormatFlags.RGB) && (pixelFormat.RgbBitCount == 16) &&
+                         (pixelFormat.RBitMask == 0x0000f800) && (pixelFormat.GBitMask == 0x000007e0) &&
+                         (pixelFormat.BBitMask == 0x0000001f) && (pixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.R5G6B5;
+                else if ((pixelFormat.Flags == (int)PixelFormatFlags.Gray) && (pixelFormat.RgbBitCount == 8) &&
+                         (pixelFormat.RBitMask == 0x000000ff) && (pixelFormat.GBitMask == 0x00000000) &&
+                         (pixelFormat.BBitMask == 0x00000000) && (pixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.G8;
+                else if ((pixelFormat.Flags == (int)PixelFormatFlags.VU) && (pixelFormat.RgbBitCount == 16) &&
+                         (pixelFormat.RBitMask == 0x000000ff) && (pixelFormat.GBitMask == 0x0000ff00) &&
+                         (pixelFormat.BBitMask == 0x00000000) && (pixelFormat.ABitMask == 0x00000000)) fileFormat = FileFormat.V8U8;
                 //
                 // If fileFormat is still invalid, then it's an unsupported format.
                 //
                 if (fileFormat == FileFormat.Unknown) throw new FormatException("File is not a supported DDS format");
-                //
-                // Size of a source pixel, in bytes
-                //
-                int srcPixelSize = ((int)header.PixelFormat.RgbBitCount / 8);
-                //
-                // We need the pitch for a row, so we can allocate enough memory for the load.
-                //
-                int rowPitch;
 
-                if ((header.HeaderFlags & (int)HeaderFlags.Pitch) != 0)
-                {
-                    //
-                    // Pitch specified.. so we can use directly
-                    //
-                    rowPitch = (int)header.PitchOrLinearSize;
-                }
-                else if ((header.HeaderFlags & (int)HeaderFlags.LinearSize) != 0)
-                {
-                    //
-                    // Linear size specified.. compute row pitch. Of course, this should never happen
-                    // as linear size is *supposed* to be for compressed textures. But Microsoft don't
-                    // always play by the rules when it comes to DDS output.
-                    //
-                    rowPitch = (int)header.PitchOrLinearSize / (int)header.Height;
-                }
-                else
-                {
-                    //
-                    // Another case of Microsoft not obeying their standard is the 'Convert to..' shell extension
-                    // that ships in the DirectX SDK. Seems to always leave flags empty..so no indication of pitch
-                    // or linear size. And - to cap it all off - they leave pitchOrLinearSize as *zero*. Zero??? If
-                    // we get this bizarre set of inputs, we just go 'screw it' and compute row pitch ourselves.
-                    //
-                    rowPitch = (int)header.Width * srcPixelSize;
-                }
-                //
-                // Ok.. now, we need to allocate room for the bytes to read in from.. it's rowPitch bytes * height
-                //
-                byte[] readPixelData = new byte[rowPitch * header.Height];
-
-                input.Read(readPixelData, 0, readPixelData.GetLength(0));
-                //
-                // We now need space for the real pixel data.. that's width * height * 4..
-                //
-                largestMipMap = new byte[header.Width * header.Height * 4];
-                //
-                // And now we have the arduous task of filling that up with stuff..
-                //
-                for (int destY = 0; destY < (int)header.Height; destY++)
-                {
-                    for (int destX = 0; destX < (int)header.Width; destX++)
-                    {
-                        //
-                        // Compute source pixel offset
-                        //
-                        int srcPixelOffset = destY * rowPitch + destX * srcPixelSize;
-                        //
-                        // Read our pixel
-                        //
-                        uint pixelColour = 0;
-                        uint pixelRed = 0;
-                        uint pixelGreen = 0;
-                        uint pixelBlue = 0;
-                        uint pixelAlpha = 0;
-                        //
-                        // Build our pixel colour as a DWORD
-                        //
-                        for (int loop = 0; loop < srcPixelSize; loop++) pixelColour |= (uint)(readPixelData[srcPixelOffset + loop] << (8 * loop));
-
-                        switch (fileFormat)
-                        {
-                            case FileFormat.A8R8G8B8:
-                                {
-                                    pixelAlpha = (pixelColour >> 24) & 0xff;
-                                    pixelRed = (pixelColour >> 16) & 0xff;
-                                    pixelGreen = (pixelColour >> 8) & 0xff;
-                                    pixelBlue = (pixelColour >> 0) & 0xff;
-
-                                    break;
-                                }
-                            case FileFormat.X8R8G8B8:
-                                {
-                                    pixelAlpha = 0xff;
-
-                                    pixelRed = (pixelColour >> 16) & 0xff;
-                                    pixelGreen = (pixelColour >> 8) & 0xff;
-                                    pixelBlue = (pixelColour >> 0) & 0xff;
-
-                                    break;
-                                }
-                            case FileFormat.A8B8G8R8:
-                                {
-                                    pixelAlpha = (pixelColour >> 24) & 0xff;
-                                    pixelRed = (pixelColour >> 0) & 0xff;
-                                    pixelGreen = (pixelColour >> 8) & 0xff;
-                                    pixelBlue = (pixelColour >> 16) & 0xff;
-
-                                    break;
-                                }
-                            case FileFormat.X8B8G8R8:
-                                {
-                                    pixelAlpha = 0xff;
-
-                                    pixelRed = (pixelColour >> 0) & 0xff;
-                                    pixelGreen = (pixelColour >> 8) & 0xff;
-                                    pixelBlue = (pixelColour >> 16) & 0xff;
-
-                                    break;
-                                }
-                            case FileFormat.A1R5G5B5:
-                                {
-                                    pixelAlpha = (pixelColour >> 15) & 0xff;
-                                    pixelRed = (pixelColour >> 10) & 0x1f;
-                                    pixelGreen = (pixelColour >> 5) & 0x1f;
-                                    pixelBlue = (pixelColour >> 0) & 0x1f;
-
-                                    pixelRed = (pixelRed << 3) | (pixelRed >> 2);
-                                    pixelGreen = (pixelGreen << 3) | (pixelGreen >> 2);
-                                    pixelBlue = (pixelBlue << 3) | (pixelBlue >> 2);
-
-                                    break;
-                                }
-                            case FileFormat.A4R4G4B4:
-                                {
-                                    pixelAlpha = (pixelColour >> 12) & 0xff;
-                                    pixelRed = (pixelColour >> 8) & 0x0f;
-                                    pixelGreen = (pixelColour >> 4) & 0x0f;
-                                    pixelBlue = (pixelColour >> 0) & 0x0f;
-
-                                    pixelAlpha = (pixelAlpha << 4) | (pixelAlpha >> 0);
-                                    pixelRed = (pixelRed << 4) | (pixelRed >> 0);
-                                    pixelGreen = (pixelGreen << 4) | (pixelGreen >> 0);
-                                    pixelBlue = (pixelBlue << 4) | (pixelBlue >> 0);
-
-                                    break;
-                                }
-                            case FileFormat.R8G8B8:
-                                {
-                                    pixelAlpha = 0xff;
-
-                                    pixelRed = (pixelColour >> 16) & 0xff;
-                                    pixelGreen = (pixelColour >> 8) & 0xff;
-                                    pixelBlue = (pixelColour >> 0) & 0xff;
-
-                                    break;
-                                }
-                            case FileFormat.V8U8:
-                                {
-                                    pixelAlpha = 0xff;
-
-                                    pixelRed = (byte)(((sbyte)(pixelColour& 0xff)) + 128);
-                                    pixelGreen = (byte)(((sbyte)((pixelColour >> 8) & 0xff)) + 128);
-                                    pixelBlue = 0xff;
-
-                                    break;
-                                }
-                            case FileFormat.R5G6B5:
-                                {
-                                    pixelAlpha = 0xff;
-
-                                    pixelRed = (pixelColour >> 11) & 0x1f;
-                                    pixelGreen = (pixelColour >> 5) & 0x3f;
-                                    pixelBlue = (pixelColour >> 0) & 0x1f;
-
-                                    pixelRed = (pixelRed << 3) | (pixelRed >> 2);
-                                    pixelGreen = (pixelGreen << 2) | (pixelGreen >> 4);
-                                    pixelBlue = (pixelBlue << 3) | (pixelBlue >> 2);
-
-                                    break;
-                                }
-                            case FileFormat.G8:
-                                {
-                                    pixelAlpha = 0xff;
-
-                                    pixelRed = pixelGreen = pixelBlue = pixelColour & 0xff;
-
-                                    break;
-                                }
-                        }
-                        //
-                        // Write the colours away..
-                        //
-                        int destPixelOffset = destY * (int)header.Width * 4 + destX * 4;
-
-                        largestMipMap[destPixelOffset + 0] = (byte)pixelRed;
-                        largestMipMap[destPixelOffset + 1] = (byte)pixelGreen;
-                        largestMipMap[destPixelOffset + 2] = (byte)pixelBlue;
-                        largestMipMap[destPixelOffset + 3] = (byte)pixelAlpha;
-                    }
-                }
+                ReadFormatMipMaps(input, fileFormat);         
             }
 
-            MipMaps = new List<DdsMipMap> { new DdsMipMap(Width, Height, largestMipMap) };
+            if (MipMaps.Count > 0) largestMipMap = MipMaps[0].MipMap;
+        }
+
+        private byte[] ReadFormatMipMap(Stream input, int width, int height, FileFormat fileFormat)
+        {
+            //
+            // Size of a source pixel, in bytes
+            //
+            int srcPixelSize = ((int)header.PixelFormat.RgbBitCount / 8);
+            //
+            // We need the pitch for a row, so we can allocate enough memory for the load.
+            //
+            int rowPitch;
+
+            if ((header.HeaderFlags & (int)HeaderFlags.Pitch) != 0)
+            {
+                //
+                // Pitch specified.. so we can use directly
+                //
+                rowPitch = (int)header.PitchOrLinearSize;
+            }
+            else if ((header.HeaderFlags & (int)HeaderFlags.LinearSize) != 0)
+            {
+                //
+                // Linear size specified.. compute row pitch. Of course, this should never happen
+                // as linear size is *supposed* to be for compressed textures. But Microsoft don't
+                // always play by the rules when it comes to DDS output.
+                //
+                rowPitch = (int)header.PitchOrLinearSize / (int)height;
+            }
+            else
+            {
+                //
+                // Another case of Microsoft not obeying their standard is the 'Convert to..' shell extension
+                // that ships in the DirectX SDK. Seems to always leave flags empty..so no indication of pitch
+                // or linear size. And - to cap it all off - they leave pitchOrLinearSize as *zero*. Zero??? If
+                // we get this bizarre set of inputs, we just go 'screw it' and compute row pitch ourselves.
+                //
+                rowPitch = (int)width * srcPixelSize;
+            }
+            //
+            // Ok.. now, we need to allocate room for the bytes to read in from.. it's rowPitch bytes * height
+            //
+            byte[] readPixelData = new byte[rowPitch * height];
+
+            input.Read(readPixelData, 0, readPixelData.GetLength(0));
+            //
+            // We now need space for the real pixel data.. that's width * height * 4..
+            //
+            var mipmap = new byte[width * height * 4];
+            //
+            // And now we have the arduous task of filling that up with stuff..
+            //
+            for (int destY = 0; destY < (int)height; destY++)
+            {
+                for (int destX = 0; destX < (int)width; destX++)
+                {
+                    //
+                    // Compute source pixel offset
+                    //
+                    int srcPixelOffset = destY * rowPitch + destX * srcPixelSize;
+                    //
+                    // Read our pixel
+                    //
+                    uint pixelColour = 0;
+                    uint pixelRed = 0;
+                    uint pixelGreen = 0;
+                    uint pixelBlue = 0;
+                    uint pixelAlpha = 0;
+                    //
+                    // Build our pixel colour as a DWORD
+                    //
+                    for (int loop = 0; loop < srcPixelSize; loop++) pixelColour |= (uint)(readPixelData[srcPixelOffset + loop] << (8 * loop));
+
+                    switch (fileFormat)
+                    {
+                        case FileFormat.A8R8G8B8:
+                            {
+                                pixelAlpha = (pixelColour >> 24) & 0xff;
+                                pixelRed = (pixelColour >> 16) & 0xff;
+                                pixelGreen = (pixelColour >> 8) & 0xff;
+                                pixelBlue = (pixelColour >> 0) & 0xff;
+
+                                break;
+                            }
+                        case FileFormat.X8R8G8B8:
+                            {
+                                pixelAlpha = 0xff;
+
+                                pixelRed = (pixelColour >> 16) & 0xff;
+                                pixelGreen = (pixelColour >> 8) & 0xff;
+                                pixelBlue = (pixelColour >> 0) & 0xff;
+
+                                break;
+                            }
+                        case FileFormat.A8B8G8R8:
+                            {
+                                pixelAlpha = (pixelColour >> 24) & 0xff;
+                                pixelRed = (pixelColour >> 0) & 0xff;
+                                pixelGreen = (pixelColour >> 8) & 0xff;
+                                pixelBlue = (pixelColour >> 16) & 0xff;
+
+                                break;
+                            }
+                        case FileFormat.X8B8G8R8:
+                            {
+                                pixelAlpha = 0xff;
+
+                                pixelRed = (pixelColour >> 0) & 0xff;
+                                pixelGreen = (pixelColour >> 8) & 0xff;
+                                pixelBlue = (pixelColour >> 16) & 0xff;
+
+                                break;
+                            }
+                        case FileFormat.A1R5G5B5:
+                            {
+                                pixelAlpha = (pixelColour >> 15) & 0xff;
+                                pixelRed = (pixelColour >> 10) & 0x1f;
+                                pixelGreen = (pixelColour >> 5) & 0x1f;
+                                pixelBlue = (pixelColour >> 0) & 0x1f;
+
+                                pixelRed = (pixelRed << 3) | (pixelRed >> 2);
+                                pixelGreen = (pixelGreen << 3) | (pixelGreen >> 2);
+                                pixelBlue = (pixelBlue << 3) | (pixelBlue >> 2);
+
+                                break;
+                            }
+                        case FileFormat.A4R4G4B4:
+                            {
+                                pixelAlpha = (pixelColour >> 12) & 0xff;
+                                pixelRed = (pixelColour >> 8) & 0x0f;
+                                pixelGreen = (pixelColour >> 4) & 0x0f;
+                                pixelBlue = (pixelColour >> 0) & 0x0f;
+
+                                pixelAlpha = (pixelAlpha << 4) | (pixelAlpha >> 0);
+                                pixelRed = (pixelRed << 4) | (pixelRed >> 0);
+                                pixelGreen = (pixelGreen << 4) | (pixelGreen >> 0);
+                                pixelBlue = (pixelBlue << 4) | (pixelBlue >> 0);
+
+                                break;
+                            }
+                        case FileFormat.R8G8B8:
+                            {
+                                pixelAlpha = 0xff;
+
+                                pixelRed = (pixelColour >> 16) & 0xff;
+                                pixelGreen = (pixelColour >> 8) & 0xff;
+                                pixelBlue = (pixelColour >> 0) & 0xff;
+
+                                break;
+                            }
+                        case FileFormat.V8U8:
+                            {
+                                pixelAlpha = 0xff;
+
+                                pixelRed = (byte)(((sbyte)(pixelColour & 0xff)) + 128);
+                                pixelGreen = (byte)(((sbyte)((pixelColour >> 8) & 0xff)) + 128);
+                                pixelBlue = 0xff;
+
+                                break;
+                            }
+                        case FileFormat.R5G6B5:
+                            {
+                                pixelAlpha = 0xff;
+
+                                pixelRed = (pixelColour >> 11) & 0x1f;
+                                pixelGreen = (pixelColour >> 5) & 0x3f;
+                                pixelBlue = (pixelColour >> 0) & 0x1f;
+
+                                pixelRed = (pixelRed << 3) | (pixelRed >> 2);
+                                pixelGreen = (pixelGreen << 2) | (pixelGreen >> 4);
+                                pixelBlue = (pixelBlue << 3) | (pixelBlue >> 2);
+
+                                break;
+                            }
+                        case FileFormat.G8:
+                            {
+                                pixelAlpha = 0xff;
+
+                                pixelRed = pixelGreen = pixelBlue = pixelColour & 0xff;
+
+                                break;
+                            }
+                    }
+                    //
+                    // Write the colours away..
+                    //
+                    int destPixelOffset = destY * (int)width * 4 + destX * 4;
+
+                    mipmap[destPixelOffset + 0] = (byte)pixelRed;
+                    mipmap[destPixelOffset + 1] = (byte)pixelGreen;
+                    mipmap[destPixelOffset + 2] = (byte)pixelBlue;
+                    mipmap[destPixelOffset + 3] = (byte)pixelAlpha;
+                }
+            }
+            
+            return mipmap;
+        }
+
+        private byte[] ReadCompressedMipMap(Stream input, int width, int height, SquishFlags squishFlags)
+        {
+            //
+            // Compute size of compressed block area
+            //
+            int blockCount = (width + 3) / 4 * ((height + 3) / 4);
+            int blockSize = (squishFlags & SquishFlags.Dxt1) != 0 ? 8 : 16;
+            //
+            // Allocate room for compressed blocks, and read data into it.
+            //
+            byte[] compressedBlocks = new byte[blockCount * blockSize];
+
+            input.Read(compressedBlocks, 0, compressedBlocks.GetLength(0));
+            //
+            // Now decompress..
+            //
+            return DdsSquish.DecompressImage(width, height, compressedBlocks, squishFlags, null);
+        }
+
+        private void ReadFormatMipMaps(Stream input, FileFormat fileFormat)
+        {
+            int count = (int)header.MipMapCount;
+            if (count == 0) count = 1;
+
+            int width = Width;
+            int heigth = Height;
+
+            while (count > 0)
+            {
+                var mipMap = ReadFormatMipMap(input, width, heigth, fileFormat);
+                MipMaps.Add(new(width, heigth, mipMap));
+
+                if (width > 1) width /= 2;
+                if (heigth > 1) heigth /= 2;
+
+                count--;
+            }
+        }
+
+        private void ReadCompressedMipMaps(Stream input, SquishFlags squishFlags)
+        {
+            int count = (int)header.MipMapCount;
+            if (count == 0) count = 1;
+
+            int width = Width;
+            int heigth = Height;
+
+            while (count > 0)
+            {
+                var mipMap = ReadCompressedMipMap(input, width, heigth, squishFlags);
+                MipMaps.Add(new(width, heigth, mipMap));
+
+                if (width > 1) width /= 2;
+                if (heigth > 1) heigth /= 2;
+                count--;
+            }
         }
 
         public void Save(Stream output, DdsSaveConfig saveConfig)
