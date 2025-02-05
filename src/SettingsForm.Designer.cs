@@ -30,7 +30,6 @@
         {
             radioNew = new RadioButton();
             groupBox1 = new GroupBox();
-            replaceOpen = new Button();
             selectOpen = new Button();
             createOpen = new Button();
             replaceBox = new TextBox();
@@ -57,7 +56,6 @@
             // 
             // groupBox1
             // 
-            groupBox1.Controls.Add(replaceOpen);
             groupBox1.Controls.Add(selectOpen);
             groupBox1.Controls.Add(createOpen);
             groupBox1.Controls.Add(replaceBox);
@@ -72,17 +70,6 @@
             groupBox1.TabIndex = 1;
             groupBox1.TabStop = false;
             groupBox1.Text = "Import in TFC";
-            // 
-            // replaceOpen
-            // 
-            replaceOpen.Enabled = false;
-            replaceOpen.Location = new Point(451, 80);
-            replaceOpen.Name = "replaceOpen";
-            replaceOpen.Size = new Size(75, 23);
-            replaceOpen.TabIndex = 8;
-            replaceOpen.Text = "Replace...";
-            replaceOpen.UseVisualStyleBackColor = true;
-            replaceOpen.Click += replaceOpen_Click;
             // 
             // selectOpen
             // 
@@ -110,7 +97,7 @@
             replaceBox.Enabled = false;
             replaceBox.Location = new Point(91, 80);
             replaceBox.Name = "replaceBox";
-            replaceBox.Size = new Size(354, 23);
+            replaceBox.Size = new Size(435, 23);
             replaceBox.TabIndex = 5;
             // 
             // addBox
@@ -143,7 +130,6 @@
             // radioReplace
             // 
             radioReplace.AutoSize = true;
-            radioReplace.Enabled = false;
             radioReplace.Location = new Point(19, 82);
             radioReplace.Name = "radioReplace";
             radioReplace.Size = new Size(66, 19);
@@ -195,6 +181,5 @@
         private TextBox createBox;
         private Button selectOpen;
         private Button createOpen;
-        private Button replaceOpen;
     }
 }

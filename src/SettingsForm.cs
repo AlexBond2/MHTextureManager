@@ -20,7 +20,6 @@ namespace MHTextureManager
             importButton.Enabled = false;
             createOpen.Enabled = radioNew.Checked;
             selectOpen.Enabled = radioAdd.Checked;
-            replaceOpen.Enabled = radioReplace.Checked;
         }
 
         private void radioNew_CheckedChanged(object sender, EventArgs e)
@@ -124,23 +123,6 @@ namespace MHTextureManager
                 string newChache = JustName(newFile);
 
                 addBox.Text = newChache;
-                importButton.Enabled = checkFileName(newChache);
-            }
-        }
-
-        private void replaceOpen_Click(object sender, EventArgs e)
-        {
-            using var selectFileDialog = new OpenFileDialog();
-            selectFileDialog.InitialDirectory = TextureCachePath;
-            selectFileDialog.Filter = "TFC files (*.tfc)|*.tfc";
-            selectFileDialog.Title = "Select a TFC file";
-
-            if (selectFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                string newFile = selectFileDialog.FileName;
-                string newChache = JustName(newFile);
-
-                replaceBox.Text = newChache;
                 importButton.Enabled = checkFileName(newChache);
             }
         }
