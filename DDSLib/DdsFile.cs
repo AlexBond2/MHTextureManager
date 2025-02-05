@@ -55,23 +55,54 @@ namespace DDSLib
 
         #region Public Methods
 
-        public void GenerateMipMaps(int minMipWidth = 1, int minMipHeight = 1)
+        public void RegenMipMaps(int count)
+    {
+            using var input = new MemoryStream();
+            input.Write(largestMipMap);
+            input.Position = 0;
+
+            if ((header.PixelFormat.Flags & (int)PixelFormatFlags.FourCC) != 0)
+            {
+                SquishFlags squishFlags = FileFormat switch
+                {
+                    FileFormat.DXT1 => SquishFlags.Dxt1,
+                    FileFormat.DXT3 => SquishFlags.Dxt3,
+                    FileFormat.DXT5 => SquishFlags.Dxt5,
+                    _ => SquishFlags.Unknown
+                };
+
+                largestMipMap = ReadCompressedMipMap(input, Width, Height, squishFlags, true);
+            } 
+            else
+            {
+                largestMipMap = ReadFormatMipMap(input, Width, Height, FileFormat, true);
+            }
+
+            GenerateMipMaps(4, 4, count);
+
+            var saveConfig = new DdsSaveConfig(FileFormat, 0, 0, false, false);
+
+            foreach (var mipMap in MipMaps)
+                mipMap.MipMap = WriteMipMap(mipMap, saveConfig);
+        }
+
+        public void GenerateMipMaps(int minMipWidth = 1, int minMipHeight = 1, int mipMax = 0)
         {
-            int mipCount = DdsHeader.CountMipMaps(Width, Height);
+            int mipCount = mipMax > 0 ? mipMax : DdsHeader.CountMipMaps(Width, Height);
 
             int mipWidth = Width;
             int mipHeight = Height;
 
-            MipMaps = new List<DdsMipMap> { new DdsMipMap(Width, Height, largestMipMap) };
+            MipMaps = [new DdsMipMap(Width, Height, largestMipMap)];
 
             for (int mipLoop = 1; mipLoop < mipCount; mipLoop++)
             {
                 if (mipWidth > minMipWidth) mipWidth /= 2;
                 if (mipHeight > minMipHeight) mipHeight /= 2;
 
-                DdsMipMap writeSize = new DdsMipMap(mipWidth, mipHeight);
+                var writeSize = new DdsMipMap(mipWidth, mipHeight);
 
-                WriteableBitmap mipMap = new WriteableBitmap(BitmapSource);
+                var mipMap = new WriteableBitmap(BitmapSource);
 
                 writeSize.MipMap = mipMap.ResizeHighQuality(writeSize.Width, writeSize.Height).ConvertToRgba();
 
@@ -572,11 +603,6 @@ namespace DDSLib
             }
 
             return outputData;
-        }
-
-        public void RegenMipMaps(int count)
-        {
-            throw new NotImplementedException();
         }
 
         #endregion Public Methods
