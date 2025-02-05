@@ -1,9 +1,18 @@
 ﻿using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using DDSLib.Constants;
 using UpkManager.Models.UpkFile.Objects.Textures;
 
 namespace MHTextureManager
 {
+
+    public enum ModResult
+    {
+        Success,
+        NotMatch,
+        TexutureNotFound
+    }
 
     public class TextureManifest
     {
@@ -35,13 +44,13 @@ namespace MHTextureManager
         private void ProcessTfcFile(string tfcFilePath)
         {
             using var sr = new StreamReader(tfcFilePath);
-            string? headerLine = sr.ReadLine();
+            string headerLine = sr.ReadLine();
 
             var guidIndex = Entries.Keys.ToLookup(key => key.TextureGuid);
 
             while (!sr.EndOfStream)
             {
-                string? line = sr.ReadLine();
+                string line = sr.ReadLine();
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
@@ -104,6 +113,84 @@ namespace MHTextureManager
             foreach (var entry in Entries.Values)
                 entry.Write(writer);
         }
+
+        public ModResult ApplyMod(TextureMipMapsInfo mod, string manifestPath)
+        {
+            string tfcPath = Path.Combine(manifestPath, mod.Updated.TextureFileName + ".tfc");
+            if (!File.Exists(tfcPath)) return ModResult.TexutureNotFound;
+
+            var guidIndex = Entries.Keys.ToLookup(key => key.TextureName);
+            var keysToUpdate = guidIndex[mod.Head.TextureName].ToList();
+
+            foreach (var key in keysToUpdate)
+            {
+                if (key.TextureGuid != mod.Head.TextureGuid) continue;
+
+                if (Entries[key].Data.Maps.Count != mod.Updated.Maps.Count)
+                    return ModResult.NotMatch;
+
+                Entries[key].Data.TextureFileName = mod.Updated.TextureFileName;
+                Entries[key].Data.SetData(mod.Updated);
+            }
+
+            return ModResult.Success;
+        }
+
+        public ModResult ResetMod(TextureMipMapsInfo mod, string manifestPath)
+        {
+            string tfcPath = Path.Combine(manifestPath, mod.Original.TextureFileName + ".tfc");
+            if (!File.Exists(tfcPath)) return ModResult.TexutureNotFound;
+
+            var guidIndex = Entries.Keys.ToLookup(key => key.TextureName);
+            var keysToUpdate = guidIndex[mod.Head.TextureName].ToList();
+
+            foreach (var key in keysToUpdate)
+            {
+                if (key.TextureGuid != mod.Head.TextureGuid) continue;
+
+                if (Entries[key].Data.Maps.Count != mod.Original.Maps.Count)
+                    return ModResult.NotMatch;
+
+                Entries[key].Data.TextureFileName = mod.Original.TextureFileName;
+                Entries[key].Data.SetData(mod.Original);
+            }
+
+            return ModResult.Success;
+        }
+    }
+
+    public class TextureMipMapsInfo
+    {
+        public TextureHead Head { get; set; }
+        public TextureMipMaps Original { get; set; }
+        public TextureMipMaps Updated { get; set; }
+        public TextureMipMapsInfo() { }
+        public TextureMipMapsInfo(TextureEntry entry)
+        {
+            Head = entry.Head;
+            Original = new(entry.Data);
+        }
+
+        public void Update(TextureMipMaps data)
+        {
+            Updated = new(data);
+        }
+
+        public void SaveBackup()
+        {
+            var modName = $"backup_{Head.TextureName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+            string modPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", modName);
+
+            var modArray = new[] { this };
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true 
+            };
+
+            using var fileStream = new FileStream(modPath, FileMode.Create, FileAccess.Write);
+            JsonSerializer.Serialize(fileStream, modArray, options);
+        }
     }
 
     public class TextureEntry
@@ -126,8 +213,10 @@ namespace MHTextureManager
 
     public struct TextureHead : IComparable<TextureHead> 
     {
-        public string TextureName;
-        public Guid TextureGuid;
+        public string TextureName { get; set; }
+        public Guid TextureGuid { get; set; }
+
+        [JsonIgnore]
         public uint HashIndex; // use HashIndex without the hash function
 
         public TextureHead(BinaryReader reader, uint index)
@@ -148,7 +237,7 @@ namespace MHTextureManager
             return HashIndex.CompareTo(other.HashIndex);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals(object obj)
         {
             if (obj == null || GetType() != obj.GetType())
                 return false;
@@ -183,10 +272,22 @@ namespace MHTextureManager
 
     public class TextureMipMap
     {
-        public TextureEntry Entry;
+        [JsonIgnore]
         public uint Index;
-        public uint Offset;
-        public uint Size;
+        public uint Offset { get; set; }
+        public uint Size { get; set; }        
+        
+        [JsonIgnore]
+        public TextureEntry Entry;
+
+        public TextureMipMap() { }
+
+        public TextureMipMap(TextureMipMap map)
+        {
+            Index = map.Index;
+            Offset = map.Offset;
+            Size = map.Size;
+        }
 
         public TextureMipMap(TextureEntry entry, BinaryReader reader)
         {
@@ -211,9 +312,22 @@ namespace MHTextureManager
 
     public class TextureMipMaps
     {
-        public string TextureFileName;
+        public string TextureFileName { get; set; }
+        public List<TextureMipMap> Maps { get; set; }
+
+        [JsonIgnore]
         public UnrealMipMap OverrideMipMap;
-        public List<TextureMipMap> Maps;
+
+        public TextureMipMaps() { }
+
+        public TextureMipMaps(TextureMipMaps data)
+        {
+            TextureFileName = data.TextureFileName;
+
+            Maps = [];
+            foreach (var map in data.Maps)
+                Maps.Add(new(map));
+        }
 
         public TextureMipMaps(TextureEntry entry, BinaryReader reader)
         {
@@ -236,6 +350,16 @@ namespace MHTextureManager
 
             foreach (var map in Maps)
                 map.Write(writer);
+        }
+
+        public void SetData(TextureMipMaps updated)
+        {
+            int num = Maps.Count;
+            for (int i = 0; i < num; i++)
+            {
+                Maps[i].Offset = updated.Maps[i].Offset;
+                Maps[i].Size = updated.Maps[i].Size;
+            }
         }
     }
 }

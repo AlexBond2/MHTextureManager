@@ -83,21 +83,20 @@ namespace MHTextureManager
                 _ => throw new ArgumentException("Invalid import type", nameof(importType))
             };
 
-            int index = 0; 
+            int index = 0;
 
+            if (Texture2D.MipMaps.Count <= index || ddsHeader.MipMaps.Count <= index)
+                return WriteResult.MipMapError;
+
+            Texture2D.ResetCompressedChunks();
             foreach (var mipMap in Entry.Data.Maps)
             {
-                if (Texture2D.MipMaps.Count <= index || ddsHeader.MipMaps.Count <= index) 
-                    return WriteResult.MipMapError;
-
                 if (importType == ImportType.Replace)
                     fs.Seek(mipMap.Offset, SeekOrigin.Begin);
 
                 Texture2D.MipMaps[index].ImageData = ddsHeader.MipMaps[index].MipMap;
 
-                var task = Texture2D.WriteMipMapChache(index);
-                task.Wait();
-                var data = task.Result;
+                var data = Texture2D.WriteMipMapChache(index);
 
                 if (data.Length == 0) return WriteResult.MipMapError;
 

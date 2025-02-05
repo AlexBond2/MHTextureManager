@@ -36,6 +36,9 @@
             textureToolStripMenuItem = new ToolStripMenuItem();
             importDDSToolStripMenuItem = new ToolStripMenuItem();
             exportDDSToolStripMenuItem = new ToolStripMenuItem();
+            modsToolStripMenuItem = new ToolStripMenuItem();
+            applyModToolStripMenuItem = new ToolStripMenuItem();
+            resetModToolStripMenuItem = new ToolStripMenuItem();
             statusStrip1 = new StatusStrip();
             totalTexturesStatusLabel = new ToolStripStatusLabel();
             totalTexturesStatus = new ToolStripStatusLabel();
@@ -89,7 +92,7 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, textureToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, textureToolStripMenuItem, modsToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(1032, 24);
@@ -106,7 +109,7 @@
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(180, 22);
+            openToolStripMenuItem.Size = new Size(161, 22);
             openToolStripMenuItem.Text = "Open Manifest...";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
             // 
@@ -114,7 +117,7 @@
             // 
             saveManifestToolStripMenuItem.Enabled = false;
             saveManifestToolStripMenuItem.Name = "saveManifestToolStripMenuItem";
-            saveManifestToolStripMenuItem.Size = new Size(180, 22);
+            saveManifestToolStripMenuItem.Size = new Size(161, 22);
             saveManifestToolStripMenuItem.Text = "Save Manifest...";
             saveManifestToolStripMenuItem.Click += saveManifestToolStripMenuItem_Click;
             // 
@@ -140,6 +143,29 @@
             exportDDSToolStripMenuItem.Size = new Size(144, 22);
             exportDDSToolStripMenuItem.Text = "Export DDS...";
             exportDDSToolStripMenuItem.Click += exportDDSToolStripMenuItem_Click;
+            // 
+            // modsToolStripMenuItem
+            // 
+            modsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { applyModToolStripMenuItem, resetModToolStripMenuItem });
+            modsToolStripMenuItem.Name = "modsToolStripMenuItem";
+            modsToolStripMenuItem.Size = new Size(49, 20);
+            modsToolStripMenuItem.Text = "Mods";
+            // 
+            // applyModToolStripMenuItem
+            // 
+            applyModToolStripMenuItem.Enabled = false;
+            applyModToolStripMenuItem.Name = "applyModToolStripMenuItem";
+            applyModToolStripMenuItem.Size = new Size(180, 22);
+            applyModToolStripMenuItem.Text = "Apply Mod...";
+            applyModToolStripMenuItem.Click += applyModToolStripMenuItem_Click;
+            // 
+            // resetModToolStripMenuItem
+            // 
+            resetModToolStripMenuItem.Enabled = false;
+            resetModToolStripMenuItem.Name = "resetModToolStripMenuItem";
+            resetModToolStripMenuItem.Size = new Size(180, 22);
+            resetModToolStripMenuItem.Text = "Reset Mod...";
+            resetModToolStripMenuItem.Click += resetModToolStripMenuItem_Click;
             // 
             // statusStrip1
             // 
@@ -580,11 +606,13 @@
         private Label widthLabel;
         private Label formatLabel;
         private ComboBox mipMapBox;
-        private Label label10;
         private Label label11;
         private Label sizeLabel;
         private Label label13;
         private Label offsetLabel;
         private ToolStripMenuItem saveManifestToolStripMenuItem;
+        private ToolStripMenuItem modsToolStripMenuItem;
+        private ToolStripMenuItem applyModToolStripMenuItem;
+        private ToolStripMenuItem resetModToolStripMenuItem;
     }
 }

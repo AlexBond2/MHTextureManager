@@ -1,4 +1,5 @@
 using DDSLib;
+using System.Text.Json;
 using System.Windows.Media.Imaging;
 
 namespace MHTextureManager
@@ -72,6 +73,8 @@ namespace MHTextureManager
 
                         statusFiltered.Text = manifestTreeView.Nodes.Count.ToString();
                         saveManifestToolStripMenuItem.Enabled = false;
+                        applyModToolStripMenuItem.Enabled = true;
+                        resetModToolStripMenuItem.Enabled = true;
                     }));
                 });
             }
@@ -280,14 +283,13 @@ namespace MHTextureManager
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 string filename = openFileDialog.FileName;
-                ImportDds(filename);
+                var ddsHeader = new DdsFile(filename, true);
+                ImportHeaderDds(ddsHeader);
             }
         }
 
-        private void ImportDds(string filename)
+        private void ImportHeaderDds(DdsFile ddsHeader)
         {
-            var ddsHeader = new DdsFile(filename, true);
-
             if (ddsHeader == null)
             {
                 MessageBox.Show("Wrong dds format!", "DDS Format", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -320,10 +322,31 @@ namespace MHTextureManager
 
             if (settingsForm.ShowDialog() == DialogResult.OK)
             {
-                if (ddsHeader.MipMaps.Count < entry.Data.Maps.Count) 
+                if (ddsHeader.MipMaps.Count < entry.Data.Maps.Count)
                     ddsHeader.RegenMipMaps(entry.Data.Maps.Count);
-                
-                textureCache.WriteTexture(ManifestPath, settingsForm.TextureCacheName, settingsForm.ImportType, ddsHeader);
+
+                var info = new TextureMipMapsInfo(entry);
+
+                var result = textureCache.WriteTexture(ManifestPath, settingsForm.TextureCacheName, settingsForm.ImportType, ddsHeader);
+
+                switch (result)
+                {
+                    case WriteResult.MipMapError:
+                        MessageBox.Show("Error while writing MipMap data",
+                            "Compression Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+
+                    case WriteResult.SizeReplaceError:
+                        MessageBox.Show("Compressed data is too large to replace",
+                            "Compression Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                }
+
+                if (result == WriteResult.Success)
+                    info.Update(entry.Data);
+
+                // if (canChange == false)
+                info.SaveBackup();
 
                 saveManifestToolStripMenuItem.Enabled = true;
 
@@ -418,6 +441,74 @@ namespace MHTextureManager
 
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 manifest.SaveManifest(saveFileDialog.FileName);
+        }
+
+        private void applyModToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using var openFileDialog = new OpenFileDialog();
+            openFileDialog.InitialDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods");
+            openFileDialog.Filter = "Mod Files (*.json)|*.json";
+            openFileDialog.Title = "Select a Mod File";
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string filename = openFileDialog.FileName;
+                if (!File.Exists(filename)) return;
+
+                var mods = LoadMods(filename);
+                foreach (var mod in mods)
+                {
+                    var result = manifest.ApplyMod(mod, ManifestPath);
+                    switch (result) 
+                    {
+                        case ModResult.TexutureNotFound:                   
+                            MessageBox.Show("Texture File not found",
+                            "Texture File Cache", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+
+                        case ModResult.NotMatch:
+                            MessageBox.Show("Wrong Update MipMaps count",
+                                "Wrong Mod", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                    }
+                }
+
+                saveManifestToolStripMenuItem.Enabled = true;
+            }
+        }
+
+        public static TextureMipMapsInfo[] LoadMods(string filePath)
+        {
+            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            return JsonSerializer.Deserialize<TextureMipMapsInfo[]>(fileStream);
+        }
+
+        private void resetModToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using var openFileDialog = new OpenFileDialog();
+            openFileDialog.InitialDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods");
+            openFileDialog.Filter = "Mod Files (*.json)|*.json";
+            openFileDialog.Title = "Select a Mod File";
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string filename = openFileDialog.FileName;
+                if (!File.Exists(filename)) return;
+
+                var mods = LoadMods(filename);
+                foreach (var mod in mods)
+                {
+                    var result = manifest.ResetMod(mod, ManifestPath);
+                    if (result == ModResult.NotMatch)
+                    {
+                        MessageBox.Show("Wrong Original Texture File Name",
+                            "Wrong Mod", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                }
+
+                saveManifestToolStripMenuItem.Enabled = true;
+            }
         }
     }
 }

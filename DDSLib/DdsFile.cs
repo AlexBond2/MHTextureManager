@@ -71,11 +71,11 @@ namespace DDSLib
                     _ => SquishFlags.Unknown
                 };
 
-                largestMipMap = ReadCompressedMipMap(input, Width, Height, squishFlags, true);
+                largestMipMap = ReadCompressedMipMap(input, Width, Height, squishFlags, false);
             } 
             else
             {
-                largestMipMap = ReadFormatMipMap(input, Width, Height, FileFormat, true);
+                largestMipMap = ReadFormatMipMap(input, Width, Height, FileFormat, false);
             }
 
             GenerateMipMaps(4, 4, count);

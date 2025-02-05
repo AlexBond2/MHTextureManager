@@ -429,25 +429,18 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
 
         #region UnrealUpkBuilderBase Implementation
 
-        public async Task<byte[]> WriteMipMapChache(int index)
+        public byte[] WriteMipMapChache(int index)
         {
             if (index >= MipMaps.Count) return [];
-
-            // get uncompressedSize
-            var mipMap = MipMaps[index];
-            int uncompressedSize = mipMap.ImageData.Length;
 
             // build compressed Chunks
             int dataSize = GetCompressedMipMapSize(index);
             if (dataSize == 0) return [];
 
-            // build header
-            var header = new UnrealCompressedChunkHeader();
-            dataSize += header.BuildExistingCompressedChunkHeader(uncompressedSize);
-
             // write header and chunks
             var writer = ByteArrayWriter.CreateNew(dataSize);
-            await header.WriteCompressedChunkHeader(writer, 0).ConfigureAwait(false);
+            if (CompressedChunks.Count <= index) return [];
+            CompressedChunks[index].Header.WriteCompressedChunkHeader(writer, 0).Wait();
 
             // write compressed data in stream
             return writer.GetBytes();
@@ -543,6 +536,11 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
             stream.Position = 0;
 
             return stream;
+        }
+
+        public void ResetCompressedChunks()
+        {
+            CompressedChunks.Clear();
         }
 
         #endregion Private Methods
