@@ -72,9 +72,9 @@ namespace UpkManager.Models.UpkFile.Objects
             return builderSize;
         }
 
-        protected async Task<int> ProcessExistingBulkData(int index, ByteArrayReader reader, BulkDataCompressionTypes compressionFlags)
+        protected int ProcessExistingBulkData(int index, ByteArrayReader reader, BulkDataCompressionTypes compressionFlags)
         {
-            int builderSize = await CompressedChunks[index].BuildExistingCompressedChunk(reader, compressionFlags).ConfigureAwait(false);
+            int builderSize = CompressedChunks[index].BuildExistingCompressedChunk(reader, compressionFlags);
 
             return builderSize;
         }

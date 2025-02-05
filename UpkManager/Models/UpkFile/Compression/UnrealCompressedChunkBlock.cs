@@ -38,16 +38,16 @@ namespace UpkManager.Models.UpkFile.Compression
 
             CompressedData = ByteArrayReader.CreateNew(compressed, 0);
 
-            await CompressedData.Encrypt().ConfigureAwait(false); // TODO: Fix this to use the flag
+            //await CompressedData.Encrypt().ConfigureAwait(false); // TODO: Fix this to use the flag
 
             CompressedSize = CompressedData.Remaining;
 
             return CompressedSize + sizeof(int) * 2;
         }
 
-        public async Task<int> BuildExistingCompressedChunkBlockData()
+        public int BuildExistingCompressedChunkBlockData()
         {
-            await CompressedData.Encrypt().ConfigureAwait(false);
+            //await CompressedData.Encrypt().ConfigureAwait(false);
 
             return CompressedSize + sizeof(int) * 2;
         }

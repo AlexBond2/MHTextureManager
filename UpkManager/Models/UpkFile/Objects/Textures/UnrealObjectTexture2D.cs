@@ -110,7 +110,6 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
 
                 MipMaps.Add(mip);
             }
-
         }
 
         public bool TryGetImageProperties(UnrealCompressedChunkHeader header, int index, UnrealMipMap overrideMipMap, out int width, out int height, out FileFormat ddsFormat)
@@ -430,6 +429,30 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
 
         #region UnrealUpkBuilderBase Implementation
 
+        public async Task<byte[]> WriteMipMapChache(int index)
+        {
+            if (index >= MipMaps.Count) return [];
+
+            // get uncompressedSize
+            var mipMap = MipMaps[index];
+            int uncompressedSize = mipMap.ImageData.Length;
+
+            // build compressed Chunks
+            int dataSize = GetCompressedMipMapSize(index);
+            if (dataSize == 0) return [];
+
+            // build header
+            var header = new UnrealCompressedChunkHeader();
+            dataSize += header.BuildExistingCompressedChunkHeader(uncompressedSize);
+
+            // write header and chunks
+            var writer = ByteArrayWriter.CreateNew(dataSize);
+            await header.WriteCompressedChunkHeader(writer, 0).ConfigureAwait(false);
+
+            // write compressed data in stream
+            return writer.GetBytes();
+        }
+
         public override int GetBuilderSize()
         {
             BuilderSize = PropertyHeader.GetBuilderSize()
@@ -448,6 +471,24 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
             }
 
             BuilderSize += Guid.Length;
+
+            return BuilderSize;
+        }
+
+        public int GetCompressedMipMapSize(int index)
+        {
+            if (index >= MipMaps.Count) return 0;
+
+            BuilderSize = base.GetBuilderSize() + sizeof(int); // need sizeof(int)?
+            var mipMap = MipMaps[index];
+
+            BulkDataCompressionTypes flags = mipMap.ImageData == null ||
+                mipMap.ImageData.Length == 0
+                ? BulkDataCompressionTypes.Unused | BulkDataCompressionTypes.StoreInSeparatefile
+                : BulkDataCompressionTypes.LZO_ENC;
+
+            BuilderSize += Task.Run(() => ProcessUncompressedBulkData(ByteArrayReader.CreateNew(mipMap.ImageData, 0), flags)).Result
+                        + sizeof(int) * 2;
 
             return BuilderSize;
         }

@@ -101,7 +101,7 @@ namespace UpkManager.Models.UpkFile.Compression
             return builderSize;
         }
 
-        public async Task<int> BuildExistingCompressedChunk(ByteArrayReader reader, BulkDataCompressionTypes compressionFlags)
+        public int BuildExistingCompressedChunk(ByteArrayReader reader, BulkDataCompressionTypes compressionFlags)
         {
             BulkDataFlags = (uint)compressionFlags;
 
@@ -114,7 +114,7 @@ namespace UpkManager.Models.UpkFile.Compression
 
             UncompressedSize = reader.Remaining;
 
-            builderSize += await Header.BuildExistingCompressedChunkHeader(reader, BulkDataFlags).ConfigureAwait(false);
+            builderSize += Header.BuildExistingCompressedChunkHeader(UncompressedSize);
 
             CompressedSize = builderSize - 16;
 
