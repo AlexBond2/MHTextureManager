@@ -9,6 +9,7 @@
     <ApplicationIcon>Resources\MHIcon.ico</ApplicationIcon>
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>x64</Platforms>
+    <Copyright>AlexBond (c) 2025</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

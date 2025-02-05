@@ -542,7 +542,7 @@
             MinimumSize = new Size(480, 410);
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "MH Texture Manager";
+            Text = "MH Texture Manager v.1.0 by AlexBond";
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             statusStrip1.ResumeLayout(false);
