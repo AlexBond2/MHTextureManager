@@ -11,6 +11,13 @@ namespace MHTextureManager
         Replace = 2,
     }
 
+    public enum WriteResult
+    {
+        Success,
+        MipMapError,
+        SizeReplaceError,
+    }
+
     public class TextureFileCache
     {
         public UnrealObjectTexture2D Texture2D { get; }
@@ -64,30 +71,49 @@ namespace MHTextureManager
             return true;
         }
 
-        public void WriteTexture(string texturePath, string textureCacheName, ImportType importType, DdsFile ddsHeader)
+        public WriteResult WriteTexture(string texturePath, string textureCacheName, ImportType importType, DdsFile ddsHeader)
         {
             string tfcPath = Path.Combine(texturePath, textureCacheName + ".tfc");
 
-            switch (importType)
+            using FileStream fs = importType switch
             {
-                case ImportType.New:
+                ImportType.New => new FileStream(tfcPath, FileMode.Create, FileAccess.Write),
+                ImportType.Add => new FileStream(tfcPath, FileMode.Append, FileAccess.Write),
+                ImportType.Replace => new FileStream(tfcPath, FileMode.Open, FileAccess.ReadWrite),
+                _ => throw new ArgumentException("Invalid import type", nameof(importType))
+            };
 
-                    // TODO
+            int index = 0; 
 
-                    break;
+            foreach (var mipMap in Entry.Data.Maps)
+            {
+                if (Texture2D.MipMaps.Count <= index || ddsHeader.MipMaps.Count <= index) 
+                    return WriteResult.MipMapError;
 
-                case ImportType.Add:
+                if (importType == ImportType.Replace)
+                    fs.Seek(mipMap.Offset, SeekOrigin.Begin);
 
-                    // TODO
+                Texture2D.MipMaps[index].ImageData = ddsHeader.MipMaps[index].MipMap;
 
-                    break;
+                var task = Texture2D.WriteMipMapChache(index);
+                task.Wait();
+                var data = task.Result;
 
-                case ImportType.Replace:
+                if (data.Length == 0) return WriteResult.MipMapError;
 
-                    // TODO
+                if (importType == ImportType.Replace && data.Length > mipMap.Size)
+                    return WriteResult.SizeReplaceError;
 
-                    break;
+                mipMap.Offset = (uint)fs.Position;
+                fs.Write(data);
+                mipMap.Size = (uint)data.Length;
+
+                index++;
             }
+
+            Entry.Data.TextureFileName = textureCacheName;
+
+            return WriteResult.Success;
         }
     }
 }
