@@ -71,7 +71,7 @@ namespace MHTextureManager
                         manifestTreeView.EndUpdate();
 
                         statusFiltered.Text = manifestTreeView.Nodes.Count.ToString();
-                        saveManifestToolStripMenuItem.Enabled = true;
+                        saveManifestToolStripMenuItem.Enabled = false;
                     }));
                 });
             }
@@ -267,6 +267,12 @@ namespace MHTextureManager
 
         private void importDDSToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (textureCache == null || textureCache.Entry == null)
+            {
+                MessageBox.Show("Current texture is empty!", "Texture Empty", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             using var openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "DDS Files (*.dds)|*.dds";
             openFileDialog.Title = "Select a DDS File";
@@ -280,19 +286,48 @@ namespace MHTextureManager
 
         private void ImportDds(string filename)
         {
-            var textureFileName = textureCache.Entry.Data.TextureFileName;
+            var ddsHeader = new DdsFile(filename, true);
+
+            if (ddsHeader == null)
+            {
+                MessageBox.Show("Wrong dds format!", "DDS Format", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var entry = textureCache.Entry;
+            var mipmap = textureCache.Texture2D.MipMaps[0];
+
+            if (ddsHeader.Width != mipmap.Width && ddsHeader.Height != mipmap.Height)
+            {
+                MessageBox.Show($"DDS should be {mipmap.Width} x {mipmap.Height}, your size {ddsHeader.Width} x {ddsHeader.Height}",
+                    "DDS Format", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (ddsHeader.FileFormat != mipmap.OverrideFormat)
+            {
+                MessageBox.Show($"DDS format should be {mipmap.OverrideFormat}, your format is {ddsHeader.FileFormat}",
+                    "DDS Format", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var textureFileName = entry.Data.TextureFileName;
             settingsForm.TextureCacheName = textureFileName;
             settingsForm.TextureCachePath = ManifestPath;
 
-            bool canChange = IsStandardCache(textureFileName);
+            bool canChange = IsStandardCache(textureFileName) == false;
             settingsForm.CanChanged = canChange;
 
             if (settingsForm.ShowDialog() == DialogResult.OK)
             {
-                ddsFile = new DdsFile(filename);
-                textureView.Image = BitmapSourceToBitmap(ddsFile.BitmapSource);
-                CenterTexture();
-                MessageBox.Show("Import not ready!", "TODO", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (ddsHeader.MipMaps.Count < entry.Data.Maps.Count) 
+                    ddsHeader.RegenMipMaps(entry.Data.Maps.Count);
+                
+                textureCache.WriteTexture(ManifestPath, settingsForm.TextureCacheName, settingsForm.ImportType, ddsHeader);
+
+                saveManifestToolStripMenuItem.Enabled = true;
+
+                LoadTextureCache(entry);
             }
         }
 

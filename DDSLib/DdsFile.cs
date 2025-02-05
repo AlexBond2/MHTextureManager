@@ -27,9 +27,9 @@ namespace DDSLib
 
         public DdsFile() { }
 
-        public DdsFile(string filename)
+        public DdsFile(string filename, bool header = false)
         {
-            Load(filename);
+            Load(File.OpenRead(filename), header);
         }
 
         public DdsFile(Stream stream)
@@ -45,9 +45,11 @@ namespace DDSLib
 
         public int Height => (int)header.Height;
 
+        public FileFormat FileFormat { get; private set; }
         public List<DdsMipMap> MipMaps { get; private set; }
 
         public BitmapSource BitmapSource => new RgbaBitmapSource(largestMipMap, Width);
+
 
         #endregion Public Properties
 
@@ -77,12 +79,7 @@ namespace DDSLib
             }
         }
 
-        public void Load(string filename)
-        {
-            Load(File.OpenRead(filename));
-        }
-
-        public void Load(Stream input)
+        public void Load(Stream input, bool onlyHeader = false)
         {
             using var reader = new BinaryReader(input);
             //
@@ -108,20 +105,20 @@ namespace DDSLib
                     case FourCCFormat.Dxt1:
                         {
                             squishFlags = SquishFlags.Dxt1;
-
+                            FileFormat = FileFormat.DXT1;
                             break;
                         }
                     case FourCCFormat.Dxt3:
                         {
                             squishFlags = SquishFlags.Dxt3;
-
+                            FileFormat = FileFormat.DXT3;
                             break;
                         }
 
                     case FourCCFormat.Dxt5:
                         {
                             squishFlags = SquishFlags.Dxt5;
-
+                            FileFormat = FileFormat.DXT5;
                             break;
                         }
                     default:
@@ -130,7 +127,7 @@ namespace DDSLib
                         }
                 }
 
-                ReadCompressedMipMaps(input, squishFlags);
+                ReadCompressedMipMaps(input, squishFlags, onlyHeader);
             }
             else
             {
@@ -175,14 +172,15 @@ namespace DDSLib
                 // If fileFormat is still invalid, then it's an unsupported format.
                 //
                 if (fileFormat == FileFormat.Unknown) throw new FormatException("File is not a supported DDS format");
+                FileFormat = fileFormat;
 
-                ReadFormatMipMaps(input, fileFormat);         
+                ReadFormatMipMaps(input, fileFormat, onlyHeader);         
             }
 
             if (MipMaps.Count > 0) largestMipMap = MipMaps[0].MipMap;
         }
 
-        private byte[] ReadFormatMipMap(Stream input, int width, int height, FileFormat fileFormat)
+        private byte[] ReadFormatMipMap(Stream input, int width, int height, FileFormat fileFormat, bool onlyHeader)
         {
             //
             // Size of a source pixel, in bytes
@@ -225,6 +223,8 @@ namespace DDSLib
             byte[] readPixelData = new byte[rowPitch * height];
 
             input.Read(readPixelData, 0, readPixelData.GetLength(0));
+
+            if (onlyHeader) return readPixelData;
             //
             // We now need space for the real pixel data.. that's width * height * 4..
             //
@@ -378,7 +378,7 @@ namespace DDSLib
             return mipmap;
         }
 
-        private byte[] ReadCompressedMipMap(Stream input, int width, int height, SquishFlags squishFlags)
+        private byte[] ReadCompressedMipMap(Stream input, int width, int height, SquishFlags squishFlags, bool onlyHeader = false)
         {
             //
             // Compute size of compressed block area
@@ -391,13 +391,16 @@ namespace DDSLib
             byte[] compressedBlocks = new byte[blockCount * blockSize];
 
             input.Read(compressedBlocks, 0, compressedBlocks.GetLength(0));
+
+            if (onlyHeader) return compressedBlocks;
+
             //
             // Now decompress..
             //
             return DdsSquish.DecompressImage(width, height, compressedBlocks, squishFlags, null);
         }
 
-        private void ReadFormatMipMaps(Stream input, FileFormat fileFormat)
+        private void ReadFormatMipMaps(Stream input, FileFormat fileFormat, bool onlyHeader)
         {
             int count = (int)header.MipMapCount;
             if (count == 0) count = 1;
@@ -407,7 +410,7 @@ namespace DDSLib
 
             while (count > 0)
             {
-                var mipMap = ReadFormatMipMap(input, width, heigth, fileFormat);
+                var mipMap = ReadFormatMipMap(input, width, heigth, fileFormat, onlyHeader);
                 MipMaps.Add(new(width, heigth, mipMap));
 
                 if (width > 1) width /= 2;
@@ -417,7 +420,7 @@ namespace DDSLib
             }
         }
 
-        private void ReadCompressedMipMaps(Stream input, SquishFlags squishFlags)
+        private void ReadCompressedMipMaps(Stream input, SquishFlags squishFlags, bool onlyHeader)
         {
             int count = (int)header.MipMapCount;
             if (count == 0) count = 1;
@@ -427,7 +430,7 @@ namespace DDSLib
 
             while (count > 0)
             {
-                var mipMap = ReadCompressedMipMap(input, width, heigth, squishFlags);
+                var mipMap = ReadCompressedMipMap(input, width, heigth, squishFlags, onlyHeader);
                 MipMaps.Add(new(width, heigth, mipMap));
 
                 if (width > 1) width /= 2;
@@ -569,6 +572,11 @@ namespace DDSLib
             }
 
             return outputData;
+        }
+
+        public void RegenMipMaps(int count)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion Public Methods

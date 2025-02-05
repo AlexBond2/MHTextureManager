@@ -6,6 +6,7 @@ namespace MHTextureManager
         public string TextureCachePath;
         public string TextureCacheName;
         public bool CanChanged;
+        public ImportType ImportType;
 
         public SettingsForm()
         {
@@ -82,7 +83,7 @@ namespace MHTextureManager
                 return false;
             }
 
-            if (newChache == TextureCacheName)
+            if (CanChanged == false && newChache == TextureCacheName)
             {
                 MessageBox.Show($"{newChache} is already reserved for the standard tfc. Please choose another one!",
                                  "Invalid File", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -141,6 +142,25 @@ namespace MHTextureManager
 
                 replaceBox.Text = newChache;
                 importButton.Enabled = checkFileName(newChache);
+            }
+        }
+
+        private void importButton_Click(object sender, EventArgs e)
+        {
+            if (radioNew.Checked)
+            {
+                ImportType = ImportType.New;
+                TextureCacheName = createBox.Text;
+            }
+            else if (radioAdd.Checked)
+            {
+                ImportType = ImportType.Add;
+                TextureCacheName = addBox.Text;
+            }
+            else if (radioAdd.Checked) 
+            { 
+                ImportType = ImportType.Replace;
+                TextureCacheName = replaceBox.Text;
             }
         }
     }

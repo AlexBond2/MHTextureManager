@@ -161,6 +161,7 @@
             importButton.TabIndex = 3;
             importButton.Text = "Import";
             importButton.UseVisualStyleBackColor = true;
+            importButton.Click += importButton_Click;
             // 
             // SettingsForm
             // 
