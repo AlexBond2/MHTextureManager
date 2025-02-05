@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Resources\MHIcon.ico</ApplicationIcon>
@@ -41,7 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="ModBackup\BACKUPS HERE.txt">
+    <None Update="Mods\BACKUPS AND MODS HERE.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\TFCLIst.txt">
