@@ -222,7 +222,11 @@ namespace MHTextureManager
         private void manifestTreeView_AfterSelect(object sender, TreeViewEventArgs e)
         {
             if (e.Node?.Tag is TextureEntry entry)
-            {
+                ReloadTextureView(entry);
+        }
+
+        public void ReloadTextureView(TextureEntry entry)
+        {
                 textureNameLabel.Text = entry.Head.TextureName;
                 textureGuidLabel.Text = entry.Head.TextureGuid.ToString();
                 mipMapsLabel.Text = entry.Data.Maps.Count.ToString();
@@ -230,7 +234,6 @@ namespace MHTextureManager
 
                 UpdateMipMapBox(entry);
                 LoadTextureCache(entry);
-            }
         }
 
         private void LoadTextureCache(TextureEntry entry, int index = 0)
@@ -350,7 +353,7 @@ namespace MHTextureManager
 
                 saveManifestToolStripMenuItem.Enabled = true;
 
-                LoadTextureCache(entry);
+                ReloadTextureView(entry);
             }
         }
 
