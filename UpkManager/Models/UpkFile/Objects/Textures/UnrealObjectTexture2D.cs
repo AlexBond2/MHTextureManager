@@ -171,6 +171,11 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
                 default:
                     switch (header.Blocks[0].UncompressedSize)
                     {
+                        case 0x0200:
+                            width = 32;
+                            height = 32;
+                            ddsFormat = FileFormat.DXT1;
+                            break;
                         case 0x0800:
                             width = 64;
                             height = 64;
@@ -541,6 +546,23 @@ namespace UpkManager.Models.UpkFile.Objects.Textures
         public void ResetCompressedChunks()
         {
             CompressedChunks.Clear();
+        }
+
+        public void ExpandMipMaps(int count, List<DdsMipMap> mipMaps)
+        {
+            MipMapsCount = count;
+            int maxIndex = MipMaps.Count;
+            var format = MipMaps[0].OverrideFormat;
+            for (int index = maxIndex; index < MipMapsCount; index++)
+            {
+                UnrealMipMap mip = new UnrealMipMap
+                {
+                    Width = mipMaps[index].Width,
+                    Height = mipMaps[index].Height,
+                    OverrideFormat = format
+                };
+                MipMaps.Add(mip);
+            }
         }
 
         #endregion Private Methods

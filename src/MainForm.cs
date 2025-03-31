@@ -227,13 +227,13 @@ namespace MHTextureManager
 
         public void ReloadTextureView(TextureEntry entry)
         {
-                textureNameLabel.Text = entry.Head.TextureName;
-                textureGuidLabel.Text = entry.Head.TextureGuid.ToString();
-                mipMapsLabel.Text = entry.Data.Maps.Count.ToString();
-                textureFileLabel.Text = entry.Data.TextureFileName;
+            textureNameLabel.Text = entry.Head.TextureName;
+            textureGuidLabel.Text = entry.Head.TextureGuid.ToString();
+            mipMapsLabel.Text = entry.Data.Maps.Count.ToString();
+            textureFileLabel.Text = entry.Data.TextureFileName;
 
-                UpdateMipMapBox(entry);
-                LoadTextureCache(entry);
+            UpdateMipMapBox(entry);
+            LoadTextureCache(entry);
         }
 
         private void LoadTextureCache(TextureEntry entry, int index = 0)
@@ -325,6 +325,8 @@ namespace MHTextureManager
 
             if (settingsForm.ShowDialog() == DialogResult.OK)
             {
+                // entry.Data.ExpandMipMaps();
+
                 if (ddsHeader.MipMaps.Count < entry.Data.Maps.Count)
                     ddsHeader.RegenMipMaps(entry.Data.Maps.Count);
 
@@ -462,9 +464,9 @@ namespace MHTextureManager
                 foreach (var mod in mods)
                 {
                     var result = manifest.ApplyMod(mod, ManifestPath);
-                    switch (result) 
+                    switch (result)
                     {
-                        case ModResult.TexutureNotFound:                   
+                        case ModResult.TexutureNotFound:
                             MessageBox.Show("Texture File not found",
                             "Texture File Cache", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return;

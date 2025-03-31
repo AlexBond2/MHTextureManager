@@ -132,7 +132,7 @@
             // 
             importDDSToolStripMenuItem.Enabled = false;
             importDDSToolStripMenuItem.Name = "importDDSToolStripMenuItem";
-            importDDSToolStripMenuItem.Size = new Size(144, 22);
+            importDDSToolStripMenuItem.Size = new Size(180, 22);
             importDDSToolStripMenuItem.Text = "Import DDS...";
             importDDSToolStripMenuItem.Click += importDDSToolStripMenuItem_Click;
             // 
@@ -140,7 +140,7 @@
             // 
             exportDDSToolStripMenuItem.Enabled = false;
             exportDDSToolStripMenuItem.Name = "exportDDSToolStripMenuItem";
-            exportDDSToolStripMenuItem.Size = new Size(144, 22);
+            exportDDSToolStripMenuItem.Size = new Size(180, 22);
             exportDDSToolStripMenuItem.Text = "Export DDS...";
             exportDDSToolStripMenuItem.Click += exportDDSToolStripMenuItem_Click;
             // 
@@ -155,7 +155,7 @@
             // 
             applyModToolStripMenuItem.Enabled = false;
             applyModToolStripMenuItem.Name = "applyModToolStripMenuItem";
-            applyModToolStripMenuItem.Size = new Size(180, 22);
+            applyModToolStripMenuItem.Size = new Size(142, 22);
             applyModToolStripMenuItem.Text = "Apply Mod...";
             applyModToolStripMenuItem.Click += applyModToolStripMenuItem_Click;
             // 
@@ -163,7 +163,7 @@
             // 
             resetModToolStripMenuItem.Enabled = false;
             resetModToolStripMenuItem.Name = "resetModToolStripMenuItem";
-            resetModToolStripMenuItem.Size = new Size(180, 22);
+            resetModToolStripMenuItem.Size = new Size(142, 22);
             resetModToolStripMenuItem.Text = "Reset Mod...";
             resetModToolStripMenuItem.Click += resetModToolStripMenuItem_Click;
             // 
@@ -542,7 +542,7 @@
             MinimumSize = new Size(480, 410);
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "MH Texture Manager v.1.0 by AlexBond";
+            Text = "MH Texture Manager v.1.1 by AlexBond";
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             statusStrip1.ResumeLayout(false);

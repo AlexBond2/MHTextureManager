@@ -85,6 +85,9 @@ namespace MHTextureManager
 
             int index = 0;
 
+            if (Texture2D.MipMaps.Count < Entry.Data.Maps.Count)
+                Texture2D.ExpandMipMaps(Entry.Data.Maps.Count, ddsHeader.MipMaps);
+
             if (Texture2D.MipMaps.Count <= index || ddsHeader.MipMaps.Count <= index)
                 return WriteResult.MipMapError;
 

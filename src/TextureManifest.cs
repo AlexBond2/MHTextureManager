@@ -297,6 +297,20 @@ namespace MHTextureManager
             Size = reader.ReadUInt32();
         }
 
+        public TextureMipMap(TextureEntry entry, uint index, TextureMipMap map)
+        {
+            Entry = entry;
+            Index = index;
+            Offset = map.Offset;
+            Size = map.Size;
+        }
+
+        public TextureMipMap(TextureEntry entry, uint index)
+        {
+            Entry = entry;
+            Index = index;
+        }
+
         public override string ToString()
         {
             return Index.ToString();
@@ -360,6 +374,23 @@ namespace MHTextureManager
                 Maps[i].Offset = updated.Maps[i].Offset;
                 Maps[i].Size = updated.Maps[i].Size;
             }
+
+            if (updated.Maps.Count > num)
+            {
+                var entry = Maps[0].Entry;
+                uint index = Maps[^1].Index + 1;
+                for (int i = num; i < updated.Maps.Count; i++)
+                    Maps.Add(new TextureMipMap(entry, index++, updated.Maps[i]));
+            }
+        }
+
+        public void ExpandMipMaps()
+        {
+            var entry = Maps[0].Entry;
+            uint maxIndex = Maps[^1].Index + 1;
+
+            for (uint index = maxIndex; index < 7; index++)
+                Maps.Add(new TextureMipMap(entry, index));
         }
     }
 }
