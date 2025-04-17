@@ -110,6 +110,28 @@ namespace DDSLib
             }
         }
 
+        public void BuildFromPng(string filePath, FileFormat overrideFormat, int width, int height, int count)
+        {
+            var bitmapImage = new BitmapImage();
+            bitmapImage.BeginInit();
+            bitmapImage.UriSource = new Uri(filePath, UriKind.RelativeOrAbsolute);
+            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage.EndInit();
+            bitmapImage.Freeze();
+
+            var bitmap = new WriteableBitmap(bitmapImage);
+            largestMipMap = bitmap.ResizeHighQuality(width, height).ConvertToRgba();
+
+            FileFormat = overrideFormat;
+            var saveConfig = new DdsSaveConfig(FileFormat, 0, 0, false, true);
+            header = new DdsHeader(saveConfig, width, height, count);
+
+            GenerateMipMaps(4, 4, count);
+
+            foreach (var mipMap in MipMaps)
+                mipMap.MipMap = WriteMipMap(mipMap, saveConfig);
+        }
+
         public void Load(Stream input, bool onlyHeader = false)
         {
             using var reader = new BinaryReader(input);
