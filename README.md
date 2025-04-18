@@ -20,8 +20,8 @@ To get started:
 6. Save the changes by selecting **Manifest -> Save Manifest...**
 
 Apply/Revert Mods:
- *  Apply selected mods with **Mods -> Apply Mod(s)...**
-* Reset to original **Mods -> Reset Mod...**
+ *  Apply selected mods with **Mods -> Apply Mod(s)**
+* Reset selected mod to original **Mods -> Reset Mod**
 
 ### Version 1.1 Changelog
  * Mods Manager Panel
