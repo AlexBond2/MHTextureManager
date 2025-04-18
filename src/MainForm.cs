@@ -21,6 +21,7 @@ namespace MHTextureManager
         public const string ManifestName = "TextureFileCacheManifest.bin";
         public string ManifestPath = "";
         public string ModsPath = "";
+        private TreeNode lastEntryNode;
 
         public MainForm()
         {
@@ -69,6 +70,7 @@ namespace MHTextureManager
                 ManifestPath = Path.GetDirectoryName(filePath) ?? "";
 
                 manifestTreeView.Nodes.Clear();
+                lastEntryNode = null;
 
                 Task.Run(() =>
                 {
@@ -211,6 +213,7 @@ namespace MHTextureManager
 
             manifestTreeView.BeginUpdate();
             manifestTreeView.Nodes.Clear();
+            lastEntryNode = null;
 
             foreach (TreeNode rootNode in rootNodes)
                 if (FilterNode(rootNode, filterText))
@@ -245,6 +248,7 @@ namespace MHTextureManager
 
             manifestTreeView.BeginUpdate();
             manifestTreeView.Nodes.Clear();
+            lastEntryNode = null;
             manifestTreeView.Nodes.AddRange([.. rootNodes]);
             manifestTreeView.EndUpdate();
 
@@ -253,8 +257,16 @@ namespace MHTextureManager
 
         private void manifestTreeView_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            if (e.Node?.Tag is TextureEntry entry)
+            ReloadTextureFromNode(e.Node);
+        }
+
+        private void ReloadTextureFromNode(TreeNode node)
+        {
+            if (node?.Tag is TextureEntry entry)
+            {
+                lastEntryNode = node;
                 ReloadTextureView(entry);
+            }
         }
 
         public void ReloadTextureView(TextureEntry entry)
@@ -265,6 +277,7 @@ namespace MHTextureManager
             textureFileLabel.Text = entry.Data.TextureFileName;
 
             UpdateMipMapBox(entry);
+            textureCache.Reset();
             LoadTextureCache(entry);
         }
 
@@ -398,8 +411,8 @@ namespace MHTextureManager
                 info.SaveBackup(ModsPath);
 
                 saveManifestToolStripMenuItem.Enabled = true;
-
                 ReloadTextureView(entry);
+                ReloadMods();
             }
         }
 
@@ -597,7 +610,6 @@ namespace MHTextureManager
 
                 try
                 {
-                    bool anyError = false;
                     var mods = LoadMods(filename);
                     foreach (var mod in mods)
                     {
@@ -615,25 +627,17 @@ namespace MHTextureManager
 
                             case ModResult.TexutureNotFound:
                                 errorMessages.Add($"[{mod.Head.TextureName}] {mod.Updated.TextureFileName}.tfc not found");
-                                anyError = true;
                                 break;
 
                             case ModResult.NotMatch:
                                 errorMessages.Add($"[{mod.Head.TextureName}] MipMaps count mismatch");
-
-                                anyError = true;
                                 break;
 
                             case ModResult.Reset:
                                 errorMessages.Add($"[{mod.Head.TextureName}] Reset impossible");
-
-                                anyError = true;
                                 break;
                         }
                     }
-
-                    // if (anyError == false) modListBox.SetItemCheckState(index, CheckState.Checked);
-                    // else if (anyModApplied) modListBox.SetItemCheckState(index, CheckState.Indeterminate);
                 }
                 catch (Exception ex)
                 {
@@ -643,8 +647,9 @@ namespace MHTextureManager
 
             if (anyModApplied)
             {
-                saveManifestToolStripMenuItem.Enabled = true;
                 ReloadMods();
+                ReloadTextureFromNode(lastEntryNode);
+                saveManifestToolStripMenuItem.Enabled = true;
             }
 
             if (errorMessages.Count > 0)
@@ -684,8 +689,8 @@ namespace MHTextureManager
                 }
             }
 
-            // modListBox.SetItemCheckState(index, CheckState.Unchecked);
             ReloadMods();
+            ReloadTextureFromNode(lastEntryNode);
             saveManifestToolStripMenuItem.Enabled = true;
         }
 

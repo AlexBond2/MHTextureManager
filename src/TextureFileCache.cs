@@ -30,6 +30,11 @@ namespace MHTextureManager
             Texture2D = new();
         }
 
+        public void Reset()
+        {
+            Entry = null;
+        }
+
         public bool LoadFromFile(string filePath, TextureEntry entry)
         {
             if (Loaded && Entry == entry) return true;
