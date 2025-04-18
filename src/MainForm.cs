@@ -819,19 +819,29 @@ namespace MHTextureManager
 
         private void openModsFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
             try
             {
+                string args = $"\"{ModsPath}\"";
+
+                if (modListBox.SelectedIndex != -1)
+                {
+                    string selectedMod = modListBox.SelectedItem.ToString();
+                    string filePath = Path.Combine(ModsPath, $"{selectedMod}.json");
+
+                    if (File.Exists(filePath))
+                        args = $"/select,\"{filePath}\"";
+                }
+
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = "explorer.exe",
-                    Arguments = $"\"{ModsPath}\"",
+                    Arguments = args,
                     UseShellExecute = true
                 });
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to open mods folder:\n{ex.Message}",
+                MessageBox.Show($"Failed to open Mods folder:\n{ex.Message}",
                               "Error",
                               MessageBoxButtons.OK,
                               MessageBoxIcon.Error);
