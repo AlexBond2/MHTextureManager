@@ -532,6 +532,7 @@ namespace MHTextureManager
 
         private void ReloadMods()
         {
+            string selectedItem = modListBox.SelectedIndex != -1 ? modListBox.SelectedItem.ToString() : null;
             modListBox.Items.Clear();
 
             try
@@ -544,6 +545,13 @@ namespace MHTextureManager
                         string fileName = Path.GetFileNameWithoutExtension(filePath);
                         var index = modListBox.Items.Add(fileName);
                         CheckMod(filePath, index);
+                    }
+
+                    if (selectedItem != null)
+                    {
+                        int indexToSelect = modListBox.Items.IndexOf(selectedItem);
+                        if (indexToSelect >= 0)
+                            modListBox.SelectedIndex = indexToSelect;
                     }
                 }
                 else
