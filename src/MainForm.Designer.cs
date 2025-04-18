@@ -262,6 +262,7 @@
             manifestTreeView.Name = "manifestTreeView";
             manifestTreeView.Size = new Size(277, 568);
             manifestTreeView.TabIndex = 0;
+            manifestTreeView.BeforeExpand += manifestTreeView_BeforeExpand;
             manifestTreeView.AfterSelect += manifestTreeView_AfterSelect;
             // 
             // panel1

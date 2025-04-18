@@ -10,6 +10,7 @@ namespace MHTextureManager
     {
         private TextureManifest manifest;
         private List<TreeNode> rootNodes;
+        private TreeItems rootItems;
         private readonly object rootNodesLock = new();
 
         private DdsFile ddsFile;
@@ -27,6 +28,7 @@ namespace MHTextureManager
             ddsFile = new();
             manifest = new();
             rootNodes = new();
+            rootItems = new();
             textureCache = new();
             settingsForm = new();
             standardList = new();
@@ -78,12 +80,16 @@ namespace MHTextureManager
 
                     Invoke(new Action(() => totalTexturesStatus.Text = totalEntries.ToString()));
 
-                    BuildTree(entries);
+                    rootItems.BuildTree(entries, rootNodesLock);
 
                     BeginInvoke(new Action(() =>
                     {
                         manifestTreeView.BeginUpdate();
-                        manifestTreeView.Nodes.AddRange([.. rootNodes]);
+
+                        //manifestTreeView.Nodes.AddRange([.. rootNodes]);
+                        foreach (var item in rootItems.Items)
+                            manifestTreeView.Nodes.Add(item.CreateTreeNode());
+
                         manifestTreeView.EndUpdate();
 
                         statusFiltered.Text = manifestTreeView.Nodes.Count.ToString();
@@ -157,7 +163,7 @@ namespace MHTextureManager
                 var task = Task.Run(() =>
                 {
                     var rootNode = new TreeNode(group.Key);
-                    AddChildNodes(rootNode, [..group]);
+                    AddChildNodes(rootNode, [.. group]);
 
                     lock (rootNodesLock)
                     {
@@ -212,13 +218,38 @@ namespace MHTextureManager
             manifestTreeView.BeginUpdate();
             manifestTreeView.Nodes.Clear();
 
-            foreach (TreeNode rootNode in rootNodes)
-                if (FilterNode(rootNode, filterText))
-                    manifestTreeView.Nodes.Add(rootNode);
+            foreach (var rootNode in rootNodes)
+                if (FilterNodeRecursive(rootNode, filterText, out TreeNode filteredClone))
+                    manifestTreeView.Nodes.Add(filteredClone);
 
             manifestTreeView.EndUpdate();
 
             return manifestTreeView.Nodes.Count > 0;
+        }
+
+        private bool FilterNodeRecursive(TreeNode originalNode, string filterText, out TreeNode result)
+        {
+            var data = (TreeItem)originalNode.Tag;
+            bool isMatch = data.Name.ToLower().Contains(filterText);
+            result = new TreeNode(data.Name) { Tag = data };
+
+            if (data.HasChildren)
+            {
+                foreach (var childData in data.Children)
+                {
+                    var tempOriginal = new TreeNode(childData.Name) { Tag = childData };
+                    if (FilterNodeRecursive(tempOriginal, filterText, out TreeNode childClone))
+                    {
+                        result.Nodes.Add(childClone);
+                        isMatch = true;
+                    }
+                }
+
+                if (result.Nodes.Count == 0 && data.HasChildren)
+                    result.Nodes.Add(new TreeNode());
+            }
+
+            return isMatch;
         }
 
         private static bool FilterNode(TreeNode node, string filterText)
@@ -244,8 +275,9 @@ namespace MHTextureManager
             if (rootNodes.Count == 0) return;
 
             manifestTreeView.BeginUpdate();
-            manifestTreeView.Nodes.Clear();
-            manifestTreeView.Nodes.AddRange([.. rootNodes]);
+            manifestTreeView.Nodes.Clear(); 
+            foreach (var item in rootItems.Items)
+                manifestTreeView.Nodes.Add(item.CreateTreeNode());
             manifestTreeView.EndUpdate();
 
             statusFiltered.Text = manifestTreeView.Nodes.Count.ToString();
@@ -253,8 +285,8 @@ namespace MHTextureManager
 
         private void manifestTreeView_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            if (e.Node?.Tag is TextureEntry entry)
-                ReloadTextureView(entry);
+            if (e.Node?.Tag is TreeItem item && item.Entry != null)
+                ReloadTextureView(item.Entry);
         }
 
         public void ReloadTextureView(TextureEntry entry)
@@ -910,6 +942,20 @@ namespace MHTextureManager
                 {
                     ReloadMods();
                 }
+            }
+        }
+
+        private void manifestTreeView_BeforeExpand(object sender, TreeViewCancelEventArgs e)
+        {
+            TreeNode node = e.Node;
+
+            if (node.Nodes.Count == 1 && node.Nodes[0].Tag == null)
+            {
+                node.Nodes.Clear();
+                var data = (TreeItem)node.Tag;
+
+                foreach (var child in data.Children)
+                    node.Nodes.Add(child.CreateTreeNode());
             }
         }
     }
