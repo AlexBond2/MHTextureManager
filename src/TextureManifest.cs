@@ -11,7 +11,8 @@ namespace MHTextureManager
     {
         Success,
         NotMatch,
-        TexutureNotFound
+        TexutureNotFound,
+        Reset
     }
 
     public class TextureManifest
@@ -157,6 +158,42 @@ namespace MHTextureManager
 
             return ModResult.Success;
         }
+
+        public ModResult GetStatus(TextureMipMapsInfo mod, string manifestPath)
+        {
+            string tfcPath = Path.Combine(manifestPath, mod.Updated.TextureFileName + ".tfc");
+            if (!File.Exists(tfcPath)) return ModResult.TexutureNotFound;
+
+            var guidIndex = Entries.Keys.ToLookup(key => key.TextureName);
+            var keysToUpdate = guidIndex[mod.Head.TextureName].ToList();
+
+            foreach (var key in keysToUpdate)
+            {
+                if (key.TextureGuid != mod.Head.TextureGuid) continue;
+
+                if (Entries[key].Data.Maps.Count != mod.Updated.Maps.Count)
+                    return ModResult.NotMatch;
+
+                if (Entries[key].Data.TextureFileName == mod.Updated.TextureFileName)
+                {
+                    if (Entries[key].Data.Maps[^1].Offset != mod.Updated.Maps[^1].Offset)
+                        return ModResult.NotMatch;
+
+                    return ModResult.Success;
+                }
+            }
+
+            return ModResult.Reset;
+        }
+
+        public TextureEntry GetTextureEntry(TextureMipMapsInfo mod)
+        {
+            var guidIndex = Entries.Keys.ToLookup(key => key.TextureName);
+            var keys = guidIndex[mod.Head.TextureName].ToList();
+            foreach (var key in keys)
+                if (key.TextureGuid == mod.Head.TextureGuid) return Entries[key];
+            return null;
+        }
     }
 
     public class TextureMipMapsInfo
@@ -176,10 +213,10 @@ namespace MHTextureManager
             Updated = new(data);
         }
 
-        public void SaveBackup()
+        public void SaveBackup(string modsPath)
         {
             var modName = $"backup_{Head.TextureName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
-            string modPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", modName);
+            string modPath = Path.Combine(modsPath, modName);
 
             var modArray = new[] { this };
 
@@ -190,6 +227,24 @@ namespace MHTextureManager
 
             using var fileStream = new FileStream(modPath, FileMode.Create, FileAccess.Write);
             JsonSerializer.Serialize(fileStream, modArray, options);
+        }
+
+        public static bool SaveMods(List<TextureMipMapsInfo> mods, string fileName)
+        {
+            var seen = new HashSet<string>();
+            foreach (var mod in mods)
+                if (!seen.Add(mod.Head.TextureName))
+                    return false;
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+
+            using var fileStream = new FileStream(fileName, FileMode.Create, FileAccess.Write);
+            JsonSerializer.Serialize(fileStream, mods, options);
+
+            return true;
         }
     }
 

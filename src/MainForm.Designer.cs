@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
@@ -36,9 +37,6 @@
             textureToolStripMenuItem = new ToolStripMenuItem();
             importDDSToolStripMenuItem = new ToolStripMenuItem();
             exportDDSToolStripMenuItem = new ToolStripMenuItem();
-            modsToolStripMenuItem = new ToolStripMenuItem();
-            applyModToolStripMenuItem = new ToolStripMenuItem();
-            resetModToolStripMenuItem = new ToolStripMenuItem();
             statusStrip1 = new StatusStrip();
             totalTexturesStatusLabel = new ToolStripStatusLabel();
             totalTexturesStatus = new ToolStripStatusLabel();
@@ -46,12 +44,15 @@
             statusFiltered = new ToolStripStatusLabel();
             progressBar = new ToolStripProgressBar();
             splitContainer1 = new SplitContainer();
+            tabControl1 = new TabControl();
+            tabPage1 = new TabPage();
             panel2 = new Panel();
             manifestTreeView = new TreeView();
             panel1 = new Panel();
             filterClear = new Button();
             label1 = new Label();
             filterBox = new TextBox();
+            tabPage2 = new TabPage();
             panel4 = new Panel();
             texturePanel = new Panel();
             textureView = new PictureBox();
@@ -75,12 +76,26 @@
             label8 = new Label();
             formatLabel = new Label();
             mipMapLabel = new Label();
+            contextMenuStrip1 = new ContextMenuStrip(components);
+            modInfoToolStripMenuItem = new ToolStripMenuItem();
+            textureToolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripMenuItem3 = new ToolStripSeparator();
+            reloadModsToolStripMenuItem = new ToolStripMenuItem();
+            openModsFolderToolStripMenuItem = new ToolStripMenuItem();
+            toolStripMenuItem2 = new ToolStripSeparator();
+            applyModToolStripMenuItem = new ToolStripMenuItem();
+            resetModToolStripMenuItem = new ToolStripMenuItem();
+            toolStripMenuItem1 = new ToolStripSeparator();
+            saveModsAsToolStripMenuItem = new ToolStripMenuItem();
+            deleteToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
             splitContainer1.SuspendLayout();
+            tabControl1.SuspendLayout();
+            tabPage1.SuspendLayout();
             panel2.SuspendLayout();
             panel1.SuspendLayout();
             panel4.SuspendLayout();
@@ -88,11 +103,12 @@
             ((System.ComponentModel.ISupportInitialize)textureView).BeginInit();
             panel5.SuspendLayout();
             panel3.SuspendLayout();
+            contextMenuStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, textureToolStripMenuItem, modsToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, textureToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(1032, 24);
@@ -132,40 +148,17 @@
             // 
             importDDSToolStripMenuItem.Enabled = false;
             importDDSToolStripMenuItem.Name = "importDDSToolStripMenuItem";
-            importDDSToolStripMenuItem.Size = new Size(144, 22);
-            importDDSToolStripMenuItem.Text = "Import DDS...";
+            importDDSToolStripMenuItem.Size = new Size(160, 22);
+            importDDSToolStripMenuItem.Text = "Import Texture...";
             importDDSToolStripMenuItem.Click += importDDSToolStripMenuItem_Click;
             // 
             // exportDDSToolStripMenuItem
             // 
             exportDDSToolStripMenuItem.Enabled = false;
             exportDDSToolStripMenuItem.Name = "exportDDSToolStripMenuItem";
-            exportDDSToolStripMenuItem.Size = new Size(144, 22);
-            exportDDSToolStripMenuItem.Text = "Export DDS...";
+            exportDDSToolStripMenuItem.Size = new Size(160, 22);
+            exportDDSToolStripMenuItem.Text = "Export Texture...";
             exportDDSToolStripMenuItem.Click += exportDDSToolStripMenuItem_Click;
-            // 
-            // modsToolStripMenuItem
-            // 
-            modsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { applyModToolStripMenuItem, resetModToolStripMenuItem });
-            modsToolStripMenuItem.Name = "modsToolStripMenuItem";
-            modsToolStripMenuItem.Size = new Size(49, 20);
-            modsToolStripMenuItem.Text = "Mods";
-            // 
-            // applyModToolStripMenuItem
-            // 
-            applyModToolStripMenuItem.Enabled = false;
-            applyModToolStripMenuItem.Name = "applyModToolStripMenuItem";
-            applyModToolStripMenuItem.Size = new Size(180, 22);
-            applyModToolStripMenuItem.Text = "Apply Mod...";
-            applyModToolStripMenuItem.Click += applyModToolStripMenuItem_Click;
-            // 
-            // resetModToolStripMenuItem
-            // 
-            resetModToolStripMenuItem.Enabled = false;
-            resetModToolStripMenuItem.Name = "resetModToolStripMenuItem";
-            resetModToolStripMenuItem.Size = new Size(180, 22);
-            resetModToolStripMenuItem.Text = "Reset Mod...";
-            resetModToolStripMenuItem.Click += resetModToolStripMenuItem_Click;
             // 
             // statusStrip1
             // 
@@ -219,8 +212,7 @@
             // 
             // splitContainer1.Panel1
             // 
-            splitContainer1.Panel1.Controls.Add(panel2);
-            splitContainer1.Panel1.Controls.Add(panel1);
+            splitContainer1.Panel1.Controls.Add(tabControl1);
             splitContainer1.Panel1MinSize = 250;
             // 
             // splitContainer1.Panel2
@@ -232,13 +224,34 @@
             splitContainer1.SplitterDistance = 285;
             splitContainer1.TabIndex = 2;
             // 
+            // tabControl1
+            // 
+            tabControl1.Controls.Add(tabPage1);
+            tabControl1.Controls.Add(tabPage2);
+            tabControl1.Dock = DockStyle.Fill;
+            tabControl1.Location = new Point(0, 0);
+            tabControl1.Name = "tabControl1";
+            tabControl1.SelectedIndex = 0;
+            tabControl1.Size = new Size(285, 628);
+            tabControl1.TabIndex = 1;
+            // 
+            // tabPage1
+            // 
+            tabPage1.Controls.Add(panel2);
+            tabPage1.Controls.Add(panel1);
+            tabPage1.Location = new Point(4, 24);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Size = new Size(277, 600);
+            tabPage1.TabIndex = 0;
+            tabPage1.Text = "Textures";
+            // 
             // panel2
             // 
             panel2.Controls.Add(manifestTreeView);
             panel2.Dock = DockStyle.Fill;
             panel2.Location = new Point(0, 32);
             panel2.Name = "panel2";
-            panel2.Size = new Size(285, 596);
+            panel2.Size = new Size(277, 568);
             panel2.TabIndex = 2;
             // 
             // manifestTreeView
@@ -247,7 +260,7 @@
             manifestTreeView.Dock = DockStyle.Fill;
             manifestTreeView.Location = new Point(0, 0);
             manifestTreeView.Name = "manifestTreeView";
-            manifestTreeView.Size = new Size(285, 596);
+            manifestTreeView.Size = new Size(277, 568);
             manifestTreeView.TabIndex = 0;
             manifestTreeView.AfterSelect += manifestTreeView_AfterSelect;
             // 
@@ -259,7 +272,7 @@
             panel1.Dock = DockStyle.Top;
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
-            panel1.Size = new Size(285, 32);
+            panel1.Size = new Size(277, 32);
             panel1.TabIndex = 1;
             // 
             // filterClear
@@ -271,7 +284,7 @@
             filterClear.Font = new Font("Segoe UI", 9F);
             filterClear.ForeColor = Color.White;
             filterClear.ImageAlign = ContentAlignment.MiddleLeft;
-            filterClear.Location = new Point(256, 4);
+            filterClear.Location = new Point(248, 4);
             filterClear.Name = "filterClear";
             filterClear.Size = new Size(24, 23);
             filterClear.TabIndex = 2;
@@ -293,9 +306,18 @@
             filterBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             filterBox.Location = new Point(42, 4);
             filterBox.Name = "filterBox";
-            filterBox.Size = new Size(208, 23);
+            filterBox.Size = new Size(200, 23);
             filterBox.TabIndex = 0;
             filterBox.KeyDown += filterBox_KeyDown;
+            // 
+            // tabPage2
+            // 
+            tabPage2.Location = new Point(4, 24);
+            tabPage2.Name = "tabPage2";
+            tabPage2.Size = new Size(277, 600);
+            tabPage2.TabIndex = 1;
+            tabPage2.Text = "Mods";
+            tabPage2.UseVisualStyleBackColor = true;
             // 
             // panel4
             // 
@@ -529,6 +551,84 @@
             mipMapLabel.TabIndex = 10;
             mipMapLabel.Text = "MipMap:";
             // 
+            // contextMenuStrip1
+            // 
+            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { modInfoToolStripMenuItem, toolStripMenuItem3, reloadModsToolStripMenuItem, openModsFolderToolStripMenuItem, toolStripMenuItem2, applyModToolStripMenuItem, resetModToolStripMenuItem, toolStripMenuItem1, saveModsAsToolStripMenuItem, deleteToolStripMenuItem });
+            contextMenuStrip1.Name = "contextMenuStrip1";
+            contextMenuStrip1.Size = new Size(173, 176);
+            contextMenuStrip1.Opening += contextMenuStrip1_Opening;
+            // 
+            // modInfoToolStripMenuItem
+            // 
+            modInfoToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { textureToolStripMenuItem1 });
+            modInfoToolStripMenuItem.Name = "modInfoToolStripMenuItem";
+            modInfoToolStripMenuItem.Size = new Size(172, 22);
+            modInfoToolStripMenuItem.Text = "Mod Info";
+            // 
+            // textureToolStripMenuItem1
+            // 
+            textureToolStripMenuItem1.Name = "textureToolStripMenuItem1";
+            textureToolStripMenuItem1.Size = new Size(112, 22);
+            textureToolStripMenuItem1.Text = "Texture";
+            textureToolStripMenuItem1.Click += textureSelectToolStripMenuItem_Click;
+            // 
+            // toolStripMenuItem3
+            // 
+            toolStripMenuItem3.Name = "toolStripMenuItem3";
+            toolStripMenuItem3.Size = new Size(169, 6);
+            // 
+            // reloadModsToolStripMenuItem
+            // 
+            reloadModsToolStripMenuItem.Name = "reloadModsToolStripMenuItem";
+            reloadModsToolStripMenuItem.Size = new Size(172, 22);
+            reloadModsToolStripMenuItem.Text = "Reload Mods";
+            reloadModsToolStripMenuItem.Click += reloadModsToolStripMenuItem1_Click;
+            // 
+            // openModsFolderToolStripMenuItem
+            // 
+            openModsFolderToolStripMenuItem.Name = "openModsFolderToolStripMenuItem";
+            openModsFolderToolStripMenuItem.Size = new Size(172, 22);
+            openModsFolderToolStripMenuItem.Text = "Open Mods Folder";
+            openModsFolderToolStripMenuItem.Click += openModsFolderToolStripMenuItem_Click;
+            // 
+            // toolStripMenuItem2
+            // 
+            toolStripMenuItem2.Name = "toolStripMenuItem2";
+            toolStripMenuItem2.Size = new Size(169, 6);
+            // 
+            // applyModToolStripMenuItem
+            // 
+            applyModToolStripMenuItem.Name = "applyModToolStripMenuItem";
+            applyModToolStripMenuItem.Size = new Size(172, 22);
+            applyModToolStripMenuItem.Text = "Apply Mod(s)";
+            applyModToolStripMenuItem.Click += applyModToolStripMenuItem_Click;
+            // 
+            // resetModToolStripMenuItem
+            // 
+            resetModToolStripMenuItem.Name = "resetModToolStripMenuItem";
+            resetModToolStripMenuItem.Size = new Size(172, 22);
+            resetModToolStripMenuItem.Text = "Reset Mod";
+            resetModToolStripMenuItem.Click += resetModToolStripMenuItem_Click;
+            // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new Size(169, 6);
+            // 
+            // saveModsAsToolStripMenuItem
+            // 
+            saveModsAsToolStripMenuItem.Name = "saveModsAsToolStripMenuItem";
+            saveModsAsToolStripMenuItem.Size = new Size(172, 22);
+            saveModsAsToolStripMenuItem.Text = "Merge Mods...";
+            saveModsAsToolStripMenuItem.Click += saveModsAsToolStripMenuItem_Click;
+            // 
+            // deleteToolStripMenuItem
+            // 
+            deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
+            deleteToolStripMenuItem.Size = new Size(172, 22);
+            deleteToolStripMenuItem.Text = "Delete Mod(s)";
+            deleteToolStripMenuItem.Click += deleteToolStripMenuItem_Click;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -542,7 +642,7 @@
             MinimumSize = new Size(480, 410);
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "MH Texture Manager v.1.0 by AlexBond";
+            Text = "MH Texture Manager v.1.1 by AlexBond";
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             statusStrip1.ResumeLayout(false);
@@ -551,6 +651,8 @@
             splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
+            tabControl1.ResumeLayout(false);
+            tabPage1.ResumeLayout(false);
             panel2.ResumeLayout(false);
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
@@ -562,6 +664,7 @@
             panel5.PerformLayout();
             panel3.ResumeLayout(false);
             panel3.PerformLayout();
+            contextMenuStrip1.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -611,8 +714,20 @@
         private Label label13;
         private Label offsetLabel;
         private ToolStripMenuItem saveManifestToolStripMenuItem;
-        private ToolStripMenuItem modsToolStripMenuItem;
+        private TabControl tabControl1;
+        private TabPage tabPage1;
+        private TabPage tabPage2;
+        private ContextMenuStrip contextMenuStrip1;
+        private ToolStripMenuItem saveModsAsToolStripMenuItem;
+        private ToolStripMenuItem deleteToolStripMenuItem;
         private ToolStripMenuItem applyModToolStripMenuItem;
         private ToolStripMenuItem resetModToolStripMenuItem;
+        private ToolStripMenuItem reloadModsToolStripMenuItem;
+        private ToolStripSeparator toolStripMenuItem2;
+        private ToolStripSeparator toolStripMenuItem1;
+        private ToolStripMenuItem openModsFolderToolStripMenuItem;
+        private ToolStripMenuItem modInfoToolStripMenuItem;
+        private ToolStripMenuItem textureToolStripMenuItem1;
+        private ToolStripSeparator toolStripMenuItem3;
     }
 }

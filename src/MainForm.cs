@@ -1,6 +1,8 @@
 using DDSLib;
 using System.Text.Json;
 using System.Windows.Media.Imaging;
+using System.Text;
+using System.Diagnostics;
 
 namespace MHTextureManager
 {
@@ -8,13 +10,17 @@ namespace MHTextureManager
     {
         private TextureManifest manifest;
         private List<TreeNode> rootNodes;
+        private readonly object rootNodesLock = new();
+
         private DdsFile ddsFile;
         private TextureFileCache textureCache;
         private SettingsForm settingsForm;
         private HashSet<string> standardList;
+        private MultiStateCheckedListBox modListBox;
 
         public const string ManifestName = "TextureFileCacheManifest.bin";
         public string ManifestPath = "";
+        public string ModsPath = "";
 
         public MainForm()
         {
@@ -26,6 +32,15 @@ namespace MHTextureManager
             standardList = new();
 
             InitializeComponent();
+
+            modListBox = new();
+
+            ModsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods");
+            if (!Directory.Exists(ModsPath)) Directory.CreateDirectory(ModsPath);
+
+            tabPage2.Controls.Add(modListBox);
+            modListBox.Dock = DockStyle.Fill;
+            modListBox.ContextMenuStrip = contextMenuStrip1;
 
             string tfclist = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TFCLIst.txt");
             if (File.Exists(tfclist))
@@ -73,8 +88,8 @@ namespace MHTextureManager
 
                         statusFiltered.Text = manifestTreeView.Nodes.Count.ToString();
                         saveManifestToolStripMenuItem.Enabled = false;
-                        applyModToolStripMenuItem.Enabled = true;
-                        resetModToolStripMenuItem.Enabled = true;
+
+                        ReloadMods();
                     }));
                 });
             }
@@ -135,13 +150,25 @@ namespace MHTextureManager
 
             var groupedEntries = entries.GroupBy(entry => entry.Head.TextureName.Split('.')[0]).ToList();
 
+            List<Task> tasks = [];
+
             foreach (var group in groupedEntries)
             {
-                var rootNode = new TreeNode(group.Key);
-                rootNodes.Add(rootNode);
+                var task = Task.Run(() =>
+                {
+                    var rootNode = new TreeNode(group.Key);
+                    AddChildNodes(rootNode, [..group]);
 
-                Task.Run(() => AddChildNodes(rootNode, [.. group]));
+                    lock (rootNodesLock)
+                    {
+                        rootNodes.Add(rootNode);
+                    }
+                });
+
+                tasks.Add(task);
             }
+
+            Task.WaitAll([.. tasks]);
         }
 
         private void AddChildNodes(TreeNode parentNode, List<TextureEntry> entries)
@@ -208,6 +235,11 @@ namespace MHTextureManager
 
         private void filterClear_Click(object sender, EventArgs e)
         {
+            ResetManifestTreeView();
+        }
+
+        private void ResetManifestTreeView()
+        {
             filterBox.Text = "";
             if (rootNodes.Count == 0) return;
 
@@ -227,13 +259,13 @@ namespace MHTextureManager
 
         public void ReloadTextureView(TextureEntry entry)
         {
-                textureNameLabel.Text = entry.Head.TextureName;
-                textureGuidLabel.Text = entry.Head.TextureGuid.ToString();
-                mipMapsLabel.Text = entry.Data.Maps.Count.ToString();
-                textureFileLabel.Text = entry.Data.TextureFileName;
+            textureNameLabel.Text = entry.Head.TextureName;
+            textureGuidLabel.Text = entry.Head.TextureGuid.ToString();
+            mipMapsLabel.Text = entry.Data.Maps.Count.ToString();
+            textureFileLabel.Text = entry.Data.TextureFileName;
 
-                UpdateMipMapBox(entry);
-                LoadTextureCache(entry);
+            UpdateMipMapBox(entry);
+            LoadTextureCache(entry);
         }
 
         private void LoadTextureCache(TextureEntry entry, int index = 0)
@@ -280,13 +312,27 @@ namespace MHTextureManager
             }
 
             using var openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "DDS Files (*.dds)|*.dds";
-            openFileDialog.Title = "Select a DDS File";
+            openFileDialog.Filter = "DDS Files (*.dds)|*.dds|PNG Files (*.png)|*.png";
+            openFileDialog.Title = "Select a Texture File";
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 string filename = openFileDialog.FileName;
-                var ddsHeader = new DdsFile(filename, true);
+                DdsFile ddsHeader;
+
+                bool isPNG = filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase);
+                if (isPNG)
+                {
+                    var entry = textureCache.Entry;
+                    var mipmap = textureCache.Texture2D.MipMaps[0];
+                    ddsHeader = new DdsFile();
+                    ddsHeader.BuildFromPng(filename, mipmap.OverrideFormat, mipmap.Width, mipmap.Height, entry.Data.Maps.Count);
+                }
+                else
+                {
+                    ddsHeader = new DdsFile(filename, true);
+                }
+
                 ImportHeaderDds(ddsHeader);
             }
         }
@@ -349,7 +395,7 @@ namespace MHTextureManager
                     info.Update(entry.Data);
 
                 // if (canChange == false)
-                info.SaveBackup();
+                info.SaveBackup(ModsPath);
 
                 saveManifestToolStripMenuItem.Enabled = true;
 
@@ -377,6 +423,17 @@ namespace MHTextureManager
             return bitmap;
         }
 
+        private static MemoryStream BitmapSourceToPng(BitmapSource bitmapSource)
+        {
+            MemoryStream outStream = new();
+
+            BitmapEncoder encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+            encoder.Save(outStream);
+
+            return outStream;
+        }
+
         private void texturePanel_Resize(object sender, EventArgs e)
         {
             CenterTexture();
@@ -399,8 +456,8 @@ namespace MHTextureManager
 
             using var saveFileDialog = new SaveFileDialog();
             saveFileDialog.FileName = textureNameLabel.Text + ".dds";
-            saveFileDialog.Filter = "DDS Files (*.dds)|*.dds";
-            saveFileDialog.Title = "Save a DDS File";
+            saveFileDialog.Filter = "DDS Files (*.dds)|*.dds|PNG Files (*.png)|*.png";
+            saveFileDialog.Title = "Save a Texture File";
 
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -412,8 +469,16 @@ namespace MHTextureManager
                     string tfcPath = Path.Combine(ManifestPath, entry.Data.TextureFileName + ".tfc");
                     textureCache.LoadFromFile(tfcPath, entry);
                 }
+
                 var stream = textureCache.Texture2D.GetMipMapsStream();
                 if (stream == null) return;
+
+                bool isPNG = filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase);
+                if (isPNG)
+                {
+                    ddsFile.Load(stream);
+                    stream = BitmapSourceToPng(ddsFile.BitmapSource);
+                }
 
                 using var fileStream = new FileStream(filename, FileMode.Create, FileAccess.Write);
                 stream.Seek(0, SeekOrigin.Begin);
@@ -446,71 +511,405 @@ namespace MHTextureManager
                 manifest.SaveManifest(saveFileDialog.FileName);
         }
 
-        private void applyModToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            using var openFileDialog = new OpenFileDialog();
-            openFileDialog.InitialDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods");
-            openFileDialog.Filter = "Mod Files (*.json)|*.json";
-            openFileDialog.Title = "Select a Mod File";
-
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                string filename = openFileDialog.FileName;
-                if (!File.Exists(filename)) return;
-
-                var mods = LoadMods(filename);
-                foreach (var mod in mods)
-                {
-                    var result = manifest.ApplyMod(mod, ManifestPath);
-                    switch (result) 
-                    {
-                        case ModResult.TexutureNotFound:                   
-                            MessageBox.Show("Texture File not found",
-                            "Texture File Cache", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-
-                        case ModResult.NotMatch:
-                            MessageBox.Show("Wrong Update MipMaps count",
-                                "Wrong Mod", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                    }
-                }
-
-                saveManifestToolStripMenuItem.Enabled = true;
-            }
-        }
-
         public static TextureMipMapsInfo[] LoadMods(string filePath)
         {
             using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
             return JsonSerializer.Deserialize<TextureMipMapsInfo[]>(fileStream);
         }
 
+        private void ReloadMods()
+        {
+            modListBox.Items.Clear();
+
+            try
+            {
+                if (Directory.Exists(ModsPath))
+                {
+                    string[] jsonFiles = Directory.GetFiles(ModsPath, "*.json");
+                    foreach (string filePath in jsonFiles)
+                    {
+                        string fileName = Path.GetFileNameWithoutExtension(filePath);
+                        var index = modListBox.Items.Add(fileName);
+                        CheckMod(filePath, index);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Folder Mods not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error mod loading:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void CheckMod(string filename, int index)
+        {
+            var mods = LoadMods(filename);
+            bool modApplied = true;
+
+            foreach (var mod in mods)
+            {
+                ModResult status;
+
+                if (IsStandardCache(mod.Original.TextureFileName))
+                    status = manifest.GetStatus(mod, ManifestPath);
+                else
+                    status = ModResult.TexutureNotFound;
+
+                if (status != ModResult.Success)
+                {
+                    if (status == ModResult.TexutureNotFound || status == ModResult.NotMatch)
+                    {
+                        modListBox.SetItemCheckState(index, CheckState.Indeterminate);
+                        return;
+                    }
+
+                    modApplied = false;
+                    break;
+                }
+            }
+
+            modListBox.SetItemCheckState(index, modApplied ? CheckState.Checked : CheckState.Unchecked);
+        }
+
+        private void reloadModsToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            ReloadMods();
+        }
+
+        private void applyModToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            List<string> errorMessages = [];
+            bool anyModApplied = false;
+
+            foreach (int index in modListBox.SelectedIndices)
+            {
+                string modName = modListBox.Items[index].ToString();
+                string filename = Path.Combine(ModsPath, $"{modName}.json");
+
+                if (!File.Exists(filename))
+                {
+                    errorMessages.Add($"Mod file not found: {modName}");
+                    continue;
+                }
+
+                try
+                {
+                    bool anyError = false;
+                    var mods = LoadMods(filename);
+                    foreach (var mod in mods)
+                    {
+                        ModResult result;
+                        if (IsStandardCache(mod.Original.TextureFileName))
+                            result = manifest.ApplyMod(mod, ManifestPath);
+                        else
+                            result = ModResult.Reset;
+
+                        switch (result)
+                        {
+                            case ModResult.Success:
+                                anyModApplied = true;
+                                break;
+
+                            case ModResult.TexutureNotFound:
+                                errorMessages.Add($"[{mod.Head.TextureName}] {mod.Updated.TextureFileName}.tfc not found");
+                                anyError = true;
+                                break;
+
+                            case ModResult.NotMatch:
+                                errorMessages.Add($"[{mod.Head.TextureName}] MipMaps count mismatch");
+
+                                anyError = true;
+                                break;
+
+                            case ModResult.Reset:
+                                errorMessages.Add($"[{mod.Head.TextureName}] Reset impossible");
+
+                                anyError = true;
+                                break;
+                        }
+                    }
+
+                    // if (anyError == false) modListBox.SetItemCheckState(index, CheckState.Checked);
+                    // else if (anyModApplied) modListBox.SetItemCheckState(index, CheckState.Indeterminate);
+                }
+                catch (Exception ex)
+                {
+                    errorMessages.Add($"Failed to process mod '{modName}': {ex.Message}");
+                }
+            }
+
+            if (anyModApplied)
+            {
+                saveManifestToolStripMenuItem.Enabled = true;
+                ReloadMods();
+            }
+
+            if (errorMessages.Count > 0)
+            {
+                string errorText = "The following errors occurred:\n\n" + string.Join("\n\n", errorMessages);
+                MessageBox.Show(errorText,
+                              "Wrong Mods",
+                              MessageBoxButtons.OK,
+                              MessageBoxIcon.Information);
+            }
+            else if (!anyModApplied)
+            {
+                MessageBox.Show("No mods were applied",
+                              "Information",
+                              MessageBoxButtons.OK,
+                              MessageBoxIcon.Information);
+            }
+        }
+
         private void resetModToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using var openFileDialog = new OpenFileDialog();
-            openFileDialog.InitialDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods");
-            openFileDialog.Filter = "Mod Files (*.json)|*.json";
-            openFileDialog.Title = "Select a Mod File";
+            int index = modListBox.SelectedIndex;
+            string modName = modListBox.Items[index].ToString();
+            string filename = Path.Combine(ModsPath, $"{modName}.json");
 
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            if (!File.Exists(filename)) return;
+
+            var mods = LoadMods(filename);
+            foreach (var mod in mods)
             {
-                string filename = openFileDialog.FileName;
+                var result = manifest.ResetMod(mod, ManifestPath);
+                if (result == ModResult.NotMatch)
+                {
+                    MessageBox.Show("Wrong Original Texture File Name",
+                        "Wrong Mod", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+
+            // modListBox.SetItemCheckState(index, CheckState.Unchecked);
+            ReloadMods();
+            saveManifestToolStripMenuItem.Enabled = true;
+        }
+
+        private void contextMenuStrip1_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            bool flag = manifest.Entries.Count > 0;
+            int selected = modListBox.SelectedIndices.Count;
+
+            reloadModsToolStripMenuItem.Enabled = flag;
+
+            bool anyChecked = false;
+            foreach (int index in modListBox.SelectedIndices)
+                if (modListBox.GetItemCheckState(index) == CheckState.Checked)
+                {
+                    anyChecked = true;
+                    break;
+                }
+
+            applyModToolStripMenuItem.Enabled = flag && selected > 0 && anyChecked == false;
+
+            resetModToolStripMenuItem.Enabled = flag && selected == 1 && anyChecked;
+
+            modInfoToolStripMenuItem.Enabled = flag && selected == 1;
+
+            saveModsAsToolStripMenuItem.Enabled = flag && selected > 1;
+
+            if (saveModsAsToolStripMenuItem.Enabled)
+            {
+                foreach (int index in modListBox.SelectedIndices)
+                    if (modListBox.GetItemCheckState(index) == CheckState.Indeterminate)
+                    {
+                        saveModsAsToolStripMenuItem.Enabled = false;
+                        break;
+                    }
+            }
+
+            deleteToolStripMenuItem.Enabled = flag && selected > 0 && anyChecked == false;
+
+            if (flag && selected == 1)
+            {
+                int index = modListBox.SelectedIndex;
+                string modName = modListBox.Items[index].ToString();
+                string filename = Path.Combine(ModsPath, $"{modName}.json");
+
                 if (!File.Exists(filename)) return;
+
+                modInfoToolStripMenuItem.DropDownItems.Clear();
 
                 var mods = LoadMods(filename);
                 foreach (var mod in mods)
                 {
-                    var result = manifest.ResetMod(mod, ManifestPath);
-                    if (result == ModResult.NotMatch)
+                    var menuItem = new ToolStripMenuItem
                     {
-                        MessageBox.Show("Wrong Original Texture File Name",
-                            "Wrong Mod", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
+                        Text = mod.Head.TextureName,
+                        Tag = mod
+                    };
+                    menuItem.Click += textureSelectToolStripMenuItem_Click;
+                    modInfoToolStripMenuItem.DropDownItems.Add(menuItem);
+                }
+            }
+        }
+
+        private void deleteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Confirmation dialog
+            DialogResult result = MessageBox.Show(
+                "Are you sure you want to delete the selected mods?",
+                "Confirm Deletion",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button2); // Default to "No"
+
+            if (result != DialogResult.Yes) return;
+
+            int successCount = 0;
+            int failCount = 0;
+            List<object> itemsToRemove = [];
+            var errorMessages = new StringBuilder();
+
+            foreach (int index in modListBox.SelectedIndices)
+            {
+                try
+                {
+                    string modName = modListBox.Items[index].ToString();
+                    string filePath = Path.Combine(ModsPath, $"{modName}.json");
+
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                        itemsToRemove.Add(modListBox.Items[index]);
+                        successCount++;
+                    }
+                    else
+                    {
+                        failCount++;
+                        errorMessages.AppendLine($"• File not found: {modName}.json");
                     }
                 }
+                catch (Exception ex)
+                {
+                    failCount++;
+                    errorMessages.AppendLine($"• Failed to delete {modListBox.Items[index]}: {ex.Message}");
+                }
+            }
 
-                saveManifestToolStripMenuItem.Enabled = true;
+            foreach (var item in itemsToRemove)
+                modListBox.Items.Remove(item);
+
+            if (failCount > 0)
+            {
+                MessageBox.Show($"Deleted {successCount} mod(s) successfully.\n\n" +
+                    $"Failed to delete {failCount} mod(s):\n" + errorMessages.ToString(),
+                    "Deletion Results",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            else if (successCount > 0)
+            {
+                MessageBox.Show(
+                    $"Successfully deleted {successCount} mod(s).",
+                    "Operation Complete",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+        }
+
+        private void openModsFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{ModsPath}\"",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to open mods folder:\n{ex.Message}",
+                              "Error",
+                              MessageBoxButtons.OK,
+                              MessageBoxIcon.Error);
+            }
+        }
+
+        private void textureSelectToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (sender is ToolStripMenuItem menuItem && menuItem.Tag is TextureMipMapsInfo mod)
+            {
+                SelectTexture(mod);
+            }
+        }
+
+        private void SelectTexture(TextureMipMapsInfo mod)
+        {
+            var entry = manifest.GetTextureEntry(mod);
+            if (entry == null) return;
+
+            TreeNode foundNode = FindNodeByTag(manifestTreeView.Nodes, entry);
+            if (foundNode != null)
+            {
+                tabControl1.SelectedTab = tabPage1;
+                manifestTreeView.SelectedNode = foundNode;
+                manifestTreeView.Focus();
+            }
+            else
+            {
+                DialogResult result = MessageBox.Show($"Texture [{mod.Head.TextureName}] not found.\n\n" +
+                    "Remove the filter and try again?",
+                    "Not Found",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2); // Default to "No"
+
+                if (result != DialogResult.Yes) return;
+
+                ResetManifestTreeView();
+                SelectTexture(mod);
+            }
+        }
+
+        private TreeNode FindNodeByTag(TreeNodeCollection nodes, object targetTag)
+        {
+            foreach (TreeNode node in nodes)
+            {
+                if (node.Tag == targetTag)
+                    return node;
+
+                var childResult = FindNodeByTag(node.Nodes, targetTag);
+                if (childResult != null)
+                    return childResult;
+            }
+            return null;
+        }
+
+        private void saveModsAsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using var saveFileDialog = new SaveFileDialog();
+            saveFileDialog.InitialDirectory = ModsPath;
+            saveFileDialog.Filter = "Mod Files (*.json)|*.json";
+            saveFileDialog.Title = "Save a Mod File";
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                List<TextureMipMapsInfo> merged = [];
+                foreach (int index in modListBox.SelectedIndices)
+                {
+                    string modName = modListBox.Items[index].ToString();
+                    string filename = Path.Combine(ModsPath, $"{modName}.json");
+
+                    if (!File.Exists(filename)) return;
+                    merged.AddRange(LoadMods(filename));
+                }
+
+                if (TextureMipMapsInfo.SaveMods(merged, saveFileDialog.FileName) == false)
+                {
+                    MessageBox.Show("Found duplicate texture", "Duplicate Textures", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                {
+                    ReloadMods();
+                }
             }
         }
     }
