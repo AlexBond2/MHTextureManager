@@ -21,7 +21,7 @@ To get started:
 
 Apply/Revert Mods:
  *  Apply selected mods with **Mods -> Apply Mod(s)**
-* Reset selected mod to original **Mods -> Reset Mod**
+* Reset selected mods to original **Mods -> Reset Mod(s)**
 
 ### Version 1.1 Changelog
  * Mods Manager Panel
