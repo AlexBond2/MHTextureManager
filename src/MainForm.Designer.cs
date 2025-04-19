@@ -555,14 +555,14 @@
             // 
             contextMenuStrip1.Items.AddRange(new ToolStripItem[] { modInfoToolStripMenuItem, toolStripMenuItem3, reloadModsToolStripMenuItem, openModsFolderToolStripMenuItem, toolStripMenuItem2, applyModToolStripMenuItem, resetModToolStripMenuItem, toolStripMenuItem1, saveModsAsToolStripMenuItem, deleteToolStripMenuItem });
             contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(173, 176);
+            contextMenuStrip1.Size = new Size(181, 198);
             contextMenuStrip1.Opening += contextMenuStrip1_Opening;
             // 
             // modInfoToolStripMenuItem
             // 
             modInfoToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { textureToolStripMenuItem1 });
             modInfoToolStripMenuItem.Name = "modInfoToolStripMenuItem";
-            modInfoToolStripMenuItem.Size = new Size(172, 22);
+            modInfoToolStripMenuItem.Size = new Size(180, 22);
             modInfoToolStripMenuItem.Text = "Mod Info";
             // 
             // textureToolStripMenuItem1
@@ -575,57 +575,57 @@
             // toolStripMenuItem3
             // 
             toolStripMenuItem3.Name = "toolStripMenuItem3";
-            toolStripMenuItem3.Size = new Size(169, 6);
+            toolStripMenuItem3.Size = new Size(177, 6);
             // 
             // reloadModsToolStripMenuItem
             // 
             reloadModsToolStripMenuItem.Name = "reloadModsToolStripMenuItem";
-            reloadModsToolStripMenuItem.Size = new Size(172, 22);
+            reloadModsToolStripMenuItem.Size = new Size(180, 22);
             reloadModsToolStripMenuItem.Text = "Reload Mods";
             reloadModsToolStripMenuItem.Click += reloadModsToolStripMenuItem1_Click;
             // 
             // openModsFolderToolStripMenuItem
             // 
             openModsFolderToolStripMenuItem.Name = "openModsFolderToolStripMenuItem";
-            openModsFolderToolStripMenuItem.Size = new Size(172, 22);
+            openModsFolderToolStripMenuItem.Size = new Size(180, 22);
             openModsFolderToolStripMenuItem.Text = "Open Mods Folder";
             openModsFolderToolStripMenuItem.Click += openModsFolderToolStripMenuItem_Click;
             // 
             // toolStripMenuItem2
             // 
             toolStripMenuItem2.Name = "toolStripMenuItem2";
-            toolStripMenuItem2.Size = new Size(169, 6);
+            toolStripMenuItem2.Size = new Size(177, 6);
             // 
             // applyModToolStripMenuItem
             // 
             applyModToolStripMenuItem.Name = "applyModToolStripMenuItem";
-            applyModToolStripMenuItem.Size = new Size(172, 22);
+            applyModToolStripMenuItem.Size = new Size(180, 22);
             applyModToolStripMenuItem.Text = "Apply Mod(s)";
             applyModToolStripMenuItem.Click += applyModToolStripMenuItem_Click;
             // 
             // resetModToolStripMenuItem
             // 
             resetModToolStripMenuItem.Name = "resetModToolStripMenuItem";
-            resetModToolStripMenuItem.Size = new Size(172, 22);
-            resetModToolStripMenuItem.Text = "Reset Mod";
+            resetModToolStripMenuItem.Size = new Size(180, 22);
+            resetModToolStripMenuItem.Text = "Reset Mod(s)";
             resetModToolStripMenuItem.Click += resetModToolStripMenuItem_Click;
             // 
             // toolStripMenuItem1
             // 
             toolStripMenuItem1.Name = "toolStripMenuItem1";
-            toolStripMenuItem1.Size = new Size(169, 6);
+            toolStripMenuItem1.Size = new Size(177, 6);
             // 
             // saveModsAsToolStripMenuItem
             // 
             saveModsAsToolStripMenuItem.Name = "saveModsAsToolStripMenuItem";
-            saveModsAsToolStripMenuItem.Size = new Size(172, 22);
+            saveModsAsToolStripMenuItem.Size = new Size(180, 22);
             saveModsAsToolStripMenuItem.Text = "Merge Mods...";
             saveModsAsToolStripMenuItem.Click += saveModsAsToolStripMenuItem_Click;
             // 
             // deleteToolStripMenuItem
             // 
             deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
-            deleteToolStripMenuItem.Size = new Size(172, 22);
+            deleteToolStripMenuItem.Size = new Size(180, 22);
             deleteToolStripMenuItem.Text = "Delete Mod(s)";
             deleteToolStripMenuItem.Click += deleteToolStripMenuItem_Click;
             // 

@@ -679,27 +679,58 @@ namespace MHTextureManager
 
         private void resetModToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            int index = modListBox.SelectedIndex;
-            string modName = modListBox.Items[index].ToString();
-            string filename = Path.Combine(ModsPath, $"{modName}.json");
+            List<string> errorMessages = [];
+            bool anyModReset = false;
 
-            if (!File.Exists(filename)) return;
-
-            var mods = LoadMods(filename);
-            foreach (var mod in mods)
+            foreach (int index in modListBox.SelectedIndices)
             {
-                var result = manifest.ResetMod(mod, ManifestPath);
-                if (result == ModResult.NotMatch)
+                string modName = modListBox.Items[index].ToString();
+                string filename = Path.Combine(ModsPath, $"{modName}.json");
+
+                if (!File.Exists(filename))
                 {
-                    MessageBox.Show("Wrong Original Texture File Name",
-                        "Wrong Mod", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    errorMessages.Add($"Mod file not found: {modName}");
+                    continue;
+                }
+
+                var mods = LoadMods(filename);
+                foreach (var mod in mods)
+                {
+                    var result = manifest.ResetMod(mod, ManifestPath);
+                    if (result == ModResult.NotMatch)
+                    {
+                        errorMessages.Add($"[{mod.Head.TextureName}] Wrong Original Texture");
+                        break;
+                    }
+                    else if (result == ModResult.Success)
+                    {
+                        anyModReset = true;
+                    }
                 }
             }
 
-            ReloadMods();
-            ReloadTextureFromNode(lastEntryNode);
-            saveManifestToolStripMenuItem.Enabled = true;
+            if (anyModReset)
+            {
+                ReloadMods();
+                ReloadTextureFromNode(lastEntryNode);
+                saveManifestToolStripMenuItem.Enabled = true;
+            }
+
+            if (errorMessages.Count > 0)
+            {
+                string errorText = "The following errors occurred:\n\n" + string.Join("\n\n", errorMessages);
+                MessageBox.Show(errorText,
+                              "Wrong Mods",
+                              MessageBoxButtons.OK,
+                              MessageBoxIcon.Information);
+            }
+            else if (!anyModReset)
+            {
+                MessageBox.Show("Mods were not reset",
+                              "Information",
+                              MessageBoxButtons.OK,
+                              MessageBoxIcon.Information);
+            }
         }
 
         private void contextMenuStrip1_Opening(object sender, System.ComponentModel.CancelEventArgs e)
@@ -709,17 +740,14 @@ namespace MHTextureManager
 
             reloadModsToolStripMenuItem.Enabled = flag;
 
-            bool anyChecked = false;
+            int checkedCount = 0;
             foreach (int index in modListBox.SelectedIndices)
                 if (modListBox.GetItemCheckState(index) == CheckState.Checked)
-                {
-                    anyChecked = true;
-                    break;
-                }
+                    checkedCount++;
 
-            applyModToolStripMenuItem.Enabled = flag && selected > 0 && anyChecked == false;
+            applyModToolStripMenuItem.Enabled = flag && selected > 0 && checkedCount == 0;
 
-            resetModToolStripMenuItem.Enabled = flag && selected == 1 && anyChecked;
+            resetModToolStripMenuItem.Enabled = flag && selected > 0 && checkedCount == selected;
 
             modInfoToolStripMenuItem.Enabled = flag && selected == 1;
 
@@ -735,7 +763,7 @@ namespace MHTextureManager
                     }
             }
 
-            deleteToolStripMenuItem.Enabled = flag && selected > 0 && anyChecked == false;
+            deleteToolStripMenuItem.Enabled = flag && selected > 0 && checkedCount == 0;
 
             if (flag && selected == 1)
             {
